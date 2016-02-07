@@ -82,7 +82,7 @@ class Process implements Runnable {
                 MatOfInt4 cd = new MatOfInt4();
                 Imgproc.convexityDefects(points.get(i), hull, cd);
                 convexityDefects.add(cd);
-                System.out.print(" | Defect points: " + cd.dump() + "\n");
+                //System.out.print(" | Defect points: " + cd.dump() + "\n");
 
                 MatOfPoint hullPoints = generateHullPointMat(hull, points.get(i));
                 hullPointMats.add(hullPoints);
@@ -93,10 +93,23 @@ class Process implements Runnable {
                     Imgproc.circle(contours, hullPoints.toArray()[j], 5, new Scalar(255, 255, 255), 3);
                 }
                 MatOfPoint simpleHull = generateSimpleConvexHull(hullPoints);
-                if(simpleHull.rows() == 4) simpleHullPointMats.add(simpleHull);
+                double angleSum = 0;
+                Point[] simpleHullA = simpleHull.toArray();
                 for(int j = 0; j < simpleHull.rows(); j++) {
                     Imgproc.circle(contours, simpleHull.toArray()[j], 12, new Scalar(255, 150, 0), 2);
+                    Point a = getLast(simpleHullA, j);
+                    Point b = simpleHullA[j];
+                    Point c = getNext(simpleHullA, j);
+                    double angleAB = Math.toDegrees(Math.atan2(b.y-a.y, b.x-a.x));
+                    double angleBC = Math.toDegrees(Math.atan2(c.y-b.y, c.x-b.x));
+                    double angle = Math.abs(angleBC-angleAB);
+                    Imgproc.putText(contours, String.valueOf((float) angle), b, Core.FONT_ITALIC, 1, Scalar.all(255), 2);
+                    if(angle > 180) angle-=180;
+                    angleSum += angle;
                 }
+                if(simpleHull.rows() == 4 && angleSum < 360) simpleHullPointMats.add(simpleHull);
+                Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 1, new Scalar(255, 128, 128), 3);
+                System.out.println("Shape interior angle sum: " + angleSum);
             }
         }
         Mat fourPoint = new Mat(blue.rows(), blue.cols(), blue.type());
@@ -113,6 +126,8 @@ class Process implements Runnable {
         Imgcodecs.imwrite(hsvPath, hsv);
         Imgcodecs.imwrite(bluePath, blue);
         Imgcodecs.imwrite(fourPointOutPath, fourPoint);
+        //VIDEO OUTPUT
+/*
         VideoWriter vw = new VideoWriter(path.substring(0, path.lastIndexOf(".")) + ".avi", -1, 1, new Size(blue.width(), blue.height()));
         Imgproc.putText(m, "ORIGINAL", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(150), 5);
         vw.write(m);
@@ -125,6 +140,7 @@ class Process implements Runnable {
         Imgproc.putText(fourPoint, "SIMPLIFIED FOUR-EDGE SHAPES", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
         vw.write(fourPoint);
         vw.release();
+        */
         System.out.println("Processed for file: " + path);
     }
 
@@ -138,7 +154,7 @@ class Process implements Runnable {
         }
         MatOfPoint retr = new MatOfPoint();
         retr.fromList(hullPoints);
-        System.out.println(retr.toString());
+        //System.out.println(retr.toString());
         return retr;
     }
 
@@ -161,11 +177,11 @@ class Process implements Runnable {
                 if(angle < minAngle) {
                     minAngleIndex = i;
                     minAngle = angle;
-                    System.out.println("New minAngle: " + minAngle + " at " + minAngleIndex);
+                    //System.out.println("New minAngle: " + minAngle + " at " + minAngleIndex);
                 }
             }
-            System.out.println("Lowest angle at " + minAngleIndex);
-            System.out.println("Points[].length = " + points.length);
+            //System.out.println("Lowest angle at " + minAngleIndex);
+            //System.out.println("Points[].length = " + points.length);
             if(minAngle < 30) {
                 Point[] newPoints = new Point[points.length-1];
                 int subtractor = 0;
