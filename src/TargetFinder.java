@@ -29,6 +29,7 @@ public class TargetFinder {
         frame = overtrayImage(frame, overlay);
         Imgcodecs.imwrite(path.substring(0, path.lastIndexOf(".")) + "E.png", frame);
         System.out.println("Done!");
+        Trajectory t = new Trajectory(points);
     }
 
     // http://stackoverflow.com/questions/21080722/merge-a-png-with-transparency-onto-another-image

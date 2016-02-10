@@ -1,0 +1,28 @@
+#All units are in inches and degrees
+
+#Height of camera above ground
+CAMERA_HEIGHT = 6
+
+#Distance the shooter is in front of the camera
+SHOOTER_DISTANCE = 3
+
+#Height of the shooter exit point above ground
+SHOOTER_HEIGHT = 5
+
+#Height of the bottom of the target above ground
+TARGET_HEIGHT = 73.5
+
+#Width of the reflective strip
+TARGET_STRIP_X = 10
+
+#Height of the reflective strip
+TARGET_STRIP_Y = 8
+
+#Diameter of the ball
+BALL_DIAMETER=10
+
+#Field of view of the camera
+CAMERA_FOV = 47
+
+#Angle of the centre of the camera from the ground
+CAMERA_ANGLE = 45

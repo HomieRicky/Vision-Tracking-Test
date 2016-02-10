@@ -12,7 +12,7 @@ public class Trajectory {
         CAMERA_HEIGHT (0), //Height of camera above ground
         SHOOTER_DISTANCE (1), //Distance the shooter is in front of the camera
         SHOOTER_HEIGHT (2), //Height of the shooter exit point above ground
-        TARGET_HEIGHT (3), //Height of the centre of the target above ground
+        TARGET_HEIGHT (3), //Height of the bottom of the target above ground
         TARGET_STRIP_Y (4), //Height of the reflective strip
         TARGET_STRIP_X (5), //Width of the reflective strip
         BALL_DIAMETER (6), //Diameter of the ball
@@ -28,7 +28,7 @@ public class Trajectory {
 
     //All constant units are in inches and degrees
     public static double constants[] = new double[9];
-    public static File constantsFile = new File("//values.txt");
+    public static File constantsFile = new File("values.txt");
     public static boolean importedAleady = false;
 
     public List<MatOfPoint> points;
@@ -45,11 +45,11 @@ public class Trajectory {
             int set = 0;
             while(br.ready()) {
                 line = br.readLine();
-                if(!line.startsWith("#")) {
+                if(!line.startsWith("#") && !line.equals("")) {
                     String field = line.substring(0, line.indexOf("=")).trim();
                     try {
                         Field f = Constants.class.getDeclaredField(field);
-                        constants[Constants.valueOf(field).code] = Double.parseDouble(line.substring(line.indexOf("=")).trim());
+                        constants[Constants.valueOf(field).code] = Double.parseDouble(line.substring(line.indexOf("=") + 1).trim());
                         set++;
                     } catch (NoSuchFieldException e) {
                         //Ignore
@@ -57,6 +57,8 @@ public class Trajectory {
                 }
             }
             System.out.println("Imported " + set + " values.");
+            if(set < constants.length) System.out.println("Warning: not all values are set!");
+            for(int i = 0; i < constants.length; i++) System.out.print(constants[i] + ", ");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
