@@ -23,13 +23,21 @@ public class TargetFinder {
         retrReciever = es.submit(fd);
         while(!retrReciever.isDone()) {}
         List<MatOfPoint> points = retrReciever.get();
-        Mat overlay = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC4, new Scalar(0, 0, 0, 0));
-        //Imgproc.fillPoly(overlay, points, new Scalar(0, 0, 255, 100));
-        Imgproc.polylines(overlay, points, true, new Scalar(255, 0, 0, 255), 20);
-        frame = overtrayImage(frame, overlay);
+        if(!points.isEmpty()) {
+            Mat overlay = new Mat(frame.rows(), frame.cols(), CvType.CV_8UC4, new Scalar(0, 0, 0, 0));
+            //Imgproc.fillPoly(overlay, points, new Scalar(0, 0, 255, 100));
+            Imgproc.polylines(overlay, points, true, new Scalar(255, 0, 0, 255), 1);
+            Imgproc.line(overlay, new Point(overlay.cols() / 2, 0), new Point(overlay.cols() / 2, overlay.rows()), new Scalar(0, 0, 255, 255), 1);
+            Imgproc.line(overlay, new Point(0, overlay.rows() / 2), new Point(overlay.cols(), overlay.rows() / 2), new Scalar(0, 0, 255, 255), 1);
+
+            Trajectory t = new Trajectory(points);
+            for (MatOfPoint point : points) {
+                Imgproc.circle(overlay, t.getTargetPoint(point), 3, new Scalar(0, 0, 255, 200), 2);
+            }
+            frame = overtrayImage(frame, overlay);
+        }
         Imgcodecs.imwrite(path.substring(0, path.lastIndexOf(".")) + "E.png", frame);
         System.out.println("Done!");
-        Trajectory t = new Trajectory(points);
     }
 
     // http://stackoverflow.com/questions/21080722/merge-a-png-with-transparency-onto-another-image

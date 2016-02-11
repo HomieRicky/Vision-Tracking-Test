@@ -1,6 +1,7 @@
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.videoio.VideoWriter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,14 +39,13 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
         }
         blue.put(0, 0, blueA);
         List<MatOfPoint> points = new ArrayList<MatOfPoint>();
-        Imgproc.threshold(blue, contours, 250, 1000, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C);
+        Imgproc.threshold(blue, contours, 100, 500, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C);
         contours.get(0, 0, blueA);
         for(int i = 0; i < blueA.length; i++) {
             blueA[i] = (byte) (255-blueA[i]);
         }
-
         for(int i = 0; i < blueA.length/3; i++) {
-            if(blueA[i*3] > 240) blueA[i*3] = 0;
+            if(blueA[i*3] > 150) blueA[i*3] = 0;
         }
         contours.put(0, 0, blueA);
         Imgproc.cvtColor(contours, contours, Imgproc.COLOR_RGB2GRAY);
@@ -55,9 +55,9 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
         List<MatOfInt> hulls = new ArrayList<MatOfInt>();
         List<MatOfInt4> convexityDefects = new ArrayList<MatOfInt4>();
         List<MatOfPoint> hullPointMats = new ArrayList<MatOfPoint>();
-        List<MatOfPoint> simpleHullPointMats = new ArrayList<MatOfPoint>();
+        List<MatOfPoint>simpleHullPointMats = new ArrayList<MatOfPoint>();
         for(int i = 0; i < points.size(); i++) {
-            if(points.get(i).rows() > 750) {
+            if(points.get(i).rows() > 100) {
                 System.out.println("Point set " + i + ": " + points.get(i).toString());
 
                 MatOfInt hull = new MatOfInt();
@@ -71,29 +71,31 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
                 Imgproc.drawContours(contours, points, i, new Scalar(0, 0, 255), 2);
                 Imgproc.polylines(contours, hullPointMats, false, new Scalar(0, 255, 0), 2);
                 for(int j = 0; j < hullPoints.rows(); j++) {
-                    Imgproc.circle(contours, hullPoints.toArray()[j], 5, new Scalar(255, 255, 255), 3);
+                    Imgproc.circle(contours, hullPoints.toArray()[j], 3, new Scalar(255, 255, 255), 1);
                 }
                 MatOfPoint simpleHull = generateSimpleConvexHull(hullPoints);
                 double angleSum = 0;
                 Point[] simpleHullA = simpleHull.toArray();
                 for(int j = 0; j < simpleHull.rows(); j++) {
-                    Imgproc.circle(contours, simpleHull.toArray()[j], 12, new Scalar(255, 150, 0), 2);
+                    Imgproc.circle(contours, simpleHull.toArray()[j], 5, new Scalar(255, 150, 0), 2);
                     Point a = getLast(simpleHullA, j);
                     Point b = simpleHullA[j];
                     Point c = getNext(simpleHullA, j);
                     double angleAB = Math.toDegrees(Math.atan2(b.y-a.y, b.x-a.x));
                     double angleBC = Math.toDegrees(Math.atan2(c.y-b.y, c.x-b.x));
                     double angle = Math.abs(angleBC-angleAB);
-                    Imgproc.putText(contours, String.valueOf((float) angle), b, Core.FONT_ITALIC, 1, Scalar.all(255), 2);
+                    Imgproc.putText(contours, String.valueOf((float) angle), b, Core.FONT_ITALIC, 0.2, Scalar.all(255), 1);
                     if(angle > 180) angle-=180;
                     angleSum += angle;
                 }
                 if(simpleHull.rows() == 4 && angleSum < 360) simpleHullPointMats.add(simpleHull);
-                Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 1, new Scalar(255, 128, 128), 3);
+                Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 0.5, new Scalar(255, 128, 128), 1);
                 System.out.println("Shape interior angle sum: " + angleSum);
             }
         }
-
+        Mat n = new Mat(blue.rows(), blue.cols(), blue.type());
+        Imgproc.fillPoly(n, simpleHullPointMats, Scalar.all(255));
+        test t = new test(n, simpleHullPointMats.get(1));
         if(saveFilterProcess) {
             Mat fourPoint = new Mat(blue.rows(), blue.cols(), blue.type());
             Imgproc.fillPoly(fourPoint, simpleHullPointMats, Scalar.all(255));
@@ -198,11 +200,11 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
         return mp;
     }
 
-    private <T> T getLast(T[] array, int curIndex) {
+    public static <T> T getLast(T[] array, int curIndex) {
         if(curIndex == 0) return array[array.length-1];
         return array[curIndex-1];
     }
-    private <T> T getNext(T[] array, int curIndex) {
+    public static <T> T getNext(T[] array, int curIndex) {
         if(curIndex == array.length-1) return array[0];
         return array[curIndex+1];
     }

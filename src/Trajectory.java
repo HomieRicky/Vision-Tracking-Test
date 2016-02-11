@@ -1,4 +1,5 @@
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -16,8 +17,10 @@ public class Trajectory {
         TARGET_STRIP_Y (4), //Height of the reflective strip
         TARGET_STRIP_X (5), //Width of the reflective strip
         BALL_DIAMETER (6), //Diameter of the ball
-        CAMERA_FOV (7), //Field of view of the camera
-        CAMERA_ANGLE (8); //Angle of the centre of the camera from the ground
+        CAMERA_VERTICAL_FOV (7), //Field of view of the camera
+        CAMERA_HORIZONTAL_FOV(8),
+        CAMERA_ANGLE (9), //Angle of the centre of the camera from the ground
+        CAMERA_PIXEL_WIDTH (10);
 
         public final int code;
 
@@ -27,7 +30,7 @@ public class Trajectory {
     }
 
     //All constant units are in inches and degrees
-    public static double constants[] = new double[9];
+    public static double constants[] = new double[11];
     public static File constantsFile = new File("values.txt");
     public static boolean importedAleady = false;
 
@@ -69,6 +72,43 @@ public class Trajectory {
     public static void importValues(String path) {
         constantsFile = new File(path);
         importValues();
+    }
+
+    public double[] getTrajectory() {   //Returns 3 vars: Angle to turn (+Right), shooting angle, shooter PWM value
+        Point[] targetPoints = new Point[points.size()];
+        for(int i = 0; i < targetPoints.length; i++) targetPoints[i] = getTargetPoint(points.get(i));
+        Point targetPoint = pickIdealTarget(targetPoints);
+        double azimuth = (targetPoint.x-(constants[Constants.CAMERA_PIXEL_WIDTH.code]/2)/);
+    }
+
+    public boolean isVerticalLine(Point a, Point b) { //Args: 2 Points to form a line
+        if(Math.abs(b.x-a.x) < Math.abs(b.y-a.y)) return true;
+        return false;
+    }
+
+    public Point getTargetPoint(MatOfPoint m) {
+        Point retrPoint = null;
+        Point[] pointArray = m.toArray();
+        for(int i = 0; i < pointArray.length; i++) {
+            if(!isVerticalLine(pointArray[i], FrameDecoder.getNext(pointArray, i))) {
+                Point p = new Point(((pointArray[i].x+FrameDecoder.getNext(pointArray, i).x))/2,
+                        ((pointArray[i].y+FrameDecoder.getNext(pointArray, i).y))/2);
+                if(retrPoint == null) retrPoint = p;
+                else if(retrPoint.y > p.y) retrPoint = p;
+            }
+
+        }
+        return retrPoint;
+    }
+
+    public Point pickIdealTarget(Point[] candidates) {
+        int retrIndex = 0;
+        for(int i = 0; i < candidates.length; i++) {
+            if(Math.abs(candidates[i].x-constants[Constants.CAMERA_PIXEL_WIDTH.code]/2) < Math.abs(candidates[retrIndex].x-constants[Constants.CAMERA_PIXEL_WIDTH.code]/2)) {
+                retrIndex = i;
+            }
+        }
+        return candidates[retrIndex];
     }
 
 

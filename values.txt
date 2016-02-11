@@ -22,7 +22,11 @@ TARGET_STRIP_Y = 8
 BALL_DIAMETER=10
 
 #Field of view of the camera
-CAMERA_FOV = 47
+CAMERA_HORIZONTAL_FOV = 47
+CAMERA_VERTICAL_FOV = 36.2
 
 #Angle of the centre of the camera from the ground
 CAMERA_ANGLE = 45
+
+CAMERA_PIXEL_WIDTH = 640
+
