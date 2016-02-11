@@ -1,3 +1,4 @@
+import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 
@@ -20,7 +21,8 @@ public class Trajectory {
         CAMERA_VERTICAL_FOV (7), //Field of view of the camera
         CAMERA_HORIZONTAL_FOV(8),
         CAMERA_ANGLE (9), //Angle of the centre of the camera from the ground
-        CAMERA_PIXEL_WIDTH (10);
+        CAMERA_PIXEL_WIDTH (10),
+        CAMERA_PIXEL_HEIGHT (11);
 
         public final int code;
 
@@ -30,7 +32,7 @@ public class Trajectory {
     }
 
     //All constant units are in inches and degrees
-    public static double constants[] = new double[11];
+    public static double constants[] = new double[12];
     public static File constantsFile = new File("values.txt");
     public static boolean importedAleady = false;
 
@@ -78,7 +80,17 @@ public class Trajectory {
         Point[] targetPoints = new Point[points.size()];
         for(int i = 0; i < targetPoints.length; i++) targetPoints[i] = getTargetPoint(points.get(i));
         Point targetPoint = pickIdealTarget(targetPoints);
-        double azimuth = (targetPoint.x-(constants[Constants.CAMERA_PIXEL_WIDTH.code]/2)/);
+        double midX = constants[Constants.CAMERA_PIXEL_WIDTH.code]/2;
+        double azimuth = ((targetPoint.x-midX)/constants[Constants.CAMERA_PIXEL_WIDTH.code])*constants[Constants.CAMERA_HORIZONTAL_FOV.code];
+        double midY = constants[Constants.CAMERA_PIXEL_HEIGHT.code]/2;
+        double angleFromCamera = (((midY-targetPoint.y)/constants[Constants.CAMERA_PIXEL_HEIGHT.code])*constants[Constants.CAMERA_VERTICAL_FOV.code])+constants[Constants.CAMERA_ANGLE.code];
+        double distFromCamera = (constants[Constants.TARGET_HEIGHT.code]-constants[Constants.CAMERA_HEIGHT.code])/Math.tan(Math.toRadians(angleFromCamera));
+        double distFromShooter = distFromCamera-constants[Constants.SHOOTER_DISTANCE.code];
+        double heightFromShooter = constants[Constants.TARGET_HEIGHT.code]-constants[Constants.SHOOTER_HEIGHT.code];
+        double angleFromShooter = Math.toDegrees(Math.atan2(heightFromShooter, distFromShooter));
+
+
+        return new double[]{azimuth, 0, 0};
     }
 
     public boolean isVerticalLine(Point a, Point b) { //Args: 2 Points to form a line
