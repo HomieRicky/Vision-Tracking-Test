@@ -12,6 +12,10 @@ import java.util.concurrent.*;
 public class TargetFinder {
 
     public static void main(String args[]) throws ExecutionException, InterruptedException {
+        TargetFinder tf = new TargetFinder();
+    }
+
+    public TargetFinder() throws ExecutionException, InterruptedException {
         int i = 9;
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         ExecutorService es = Executors.newSingleThreadExecutor();
