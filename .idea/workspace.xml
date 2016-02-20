@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ce0946b6-7091-4843-a0bf-6b4df8392fef" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/logo.jpg" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/CameraInputStream.java" afterPath="$PROJECT_DIR$/src/CameraInputStream.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/DriverStream.java" afterPath="$PROJECT_DIR$/src/DriverStream.java" />
     </list>
     <list id="a2dc0dc5-ee5c-4368-aa52-3e2b7b5c0051" name="Rejected commit: Default" comment="75% complete!" />
     <ignored path="TargetFinder.iws" />
@@ -571,7 +568,13 @@
       <option name="project" value="LOCAL" />
       <updated>1455177047757</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Fixed drawing stuff">
+      <created>1455985500921</created>
+      <option name="number" value="00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1455985500921</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -617,7 +620,8 @@
     <MESSAGE value="75% complete!" />
     <MESSAGE value="Cleaned up some code and rewrote the main method. New overlay over the original image (9E)" />
     <MESSAGE value="Now finds angles and distances to targets." />
-    <option name="LAST_COMMIT_MESSAGE" value="Now finds angles and distances to targets." />
+    <MESSAGE value="Fixed drawing stuff" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed drawing stuff" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
