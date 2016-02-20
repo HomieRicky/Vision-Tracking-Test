@@ -31,20 +31,21 @@ public class DriverStream extends JFrame {
     public JPanel panel;
     public JTextArea console;
     public JLabel image;
-
-    VideoCapture capture;
+    public BufferedImage imgBuffer = null;
 
     public static void main(String args[]) {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         Mat baseFrame = new Mat(480, 640, CvType.CV_8UC3, new Scalar(0, 255, 0));
         DriverStream driverStream = new DriverStream();
-        CameraInputStream cameraStream = new CameraInputStream(driverStream.capture, driverStream);
+        CameraInputStream cameraStream = new CameraInputStream(driverStream);
         ExecutorService executor = Executors.newFixedThreadPool(1);
         Runnable camThread = cameraStream;
         executor.execute(camThread);
         errText = "Started";
 
         while(true) {
+            if(driverStream.imgBuffer == null) driverStream.frame = baseFrame;
+            else driverStream.frame = bufferedImageToMat(driverStream.imgBuffer);
             long timer = System.currentTimeMillis();
             FrameDecoder fd;
             System.out.println(driverStream.frame.toString());
@@ -78,7 +79,7 @@ public class DriverStream extends JFrame {
             Imgproc.line(overlay, new Point(overlay.cols() / 2, 0), new Point(overlay.cols() / 2, overlay.rows()), new Scalar(0, 0, 255, 255), 1);
             Imgproc.line(overlay, new Point(0, overlay.rows() / 2), new Point(overlay.cols(), overlay.rows() / 2), new Scalar(0, 0, 255, 255), 1);
 
-            if(trajectoryVals.length == 0) errText += " No trajectory.";
+            if(trajectoryVals.length == 0) errText = " No trajectory.";
             else {
                 for (MatOfPoint point : targets) {
                     Imgproc.circle(overlay, t.getTargetPoint(point), 3, new Scalar(0, 0, 255, 200), 2);
@@ -134,6 +135,13 @@ public class DriverStream extends JFrame {
         byte[] data = dataBuffer.getData();
         frame.get(0, 0, data);
         return image;
+    }
+
+    public static Mat bufferedImageToMat(BufferedImage img) {
+        byte[] pixels = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+        Mat m = new Mat(480, 640, CvType.CV_8UC3);
+        m.put(0, 0, pixels);
+        return m;
     }
 
     private static Mat overtrayImage( Mat background, Mat foreground ) {

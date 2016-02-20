@@ -5,6 +5,11 @@ import org.opencv.core.Size;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.Driver;
 import java.util.concurrent.Callable;
 
@@ -13,30 +18,27 @@ import java.util.concurrent.Callable;
  */
 public class CameraInputStream implements Runnable {
 
-    VideoCapture capturer;
+    URL url;
     DriverStream stream;
     private long lastUpdateTime;
     VideoWriter vw;
     long time;
     boolean ran = false;
 
-    public CameraInputStream(VideoCapture c, DriverStream stream) {
+    public CameraInputStream(DriverStream stream) {
         try {
-            capturer = new VideoCapture();
-            capturer.open("http://10.8.65.11/mjpg/video.mjpg");
-        } catch (UnsatisfiedLinkError e) {
-            DriverStream.errText += "Failed to connect to camera!";
-            System.out.println("Failed to connect to camera!");
-
+            url = new URL("http://10.8.65.11/axis-cgi/jpg/image.cgi?resolution=640x480");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
         }
         this.stream = stream;
         lastUpdateTime = System.currentTimeMillis();
-        vw = new VideoWriter("save.avi", -1, 30, new Size(480, 640));
+        //vw = new VideoWriter("save.avi", -1, 30, new Size(480, 640));
         time = System.currentTimeMillis();
     }
 
-    public void sendToWindow(Mat mat) {
-        stream.frame = mat;
+    public void sendToWindow(BufferedImage image) {
+        stream.imgBuffer = image;
         DriverStream.errText = "";
     }
 
@@ -52,27 +54,16 @@ public class CameraInputStream implements Runnable {
     @Override
     public void run() {
         while(true) {
-            Mat frame = new Mat();
+            BufferedImage frame = null;
             try {
-                capturer.read(frame);
-                if(System.currentTimeMillis()-time < 10000) vw.write(frame);
-                System.out.println(frame.get(0, 0));
+                frame = ImageIO.read(url);
                 System.out.println("Sent legit frame!");
-            } catch (UnsatisfiedLinkError e) {
-                sendError(e.getMessage());
-                System.out.println(e.getMessage());
             } catch (Exception e) {
                 sendError(e.getMessage());
                 System.out.println(e.getMessage());
-
             }
-            if(System.currentTimeMillis()-time > 10000 && !ran) {
-                ran = true;
-                vw.release();
-            }
-            System.out.println(frame.size().area());
-            if(frame.size().area()==0) sendToWindow(new Mat(480, 640, CvType.CV_8UC3, Scalar.all(128)));
-            else sendToWindow(frame);
+            if(frame != null) sendToWindow(frame);
+            else sendError("no frame");
             long curTime = System.currentTimeMillis();
             sendFPS(curTime-lastUpdateTime);
             lastUpdateTime = curTime;
