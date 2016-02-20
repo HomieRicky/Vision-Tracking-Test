@@ -64,6 +64,7 @@ public class Trajectory {
             System.out.println("Imported " + set + " values.");
             if(set < constants.length) System.out.println("Warning: not all values are set!");
             for(int i = 0; i < constants.length; i++) System.out.print(constants[i] + ", ");
+            importedAleady = true;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -76,7 +77,8 @@ public class Trajectory {
         importValues();
     }
 
-    public double[] getTrajectory() {   //Returns 3 vars: Angle to turn (+Right), shooting angle, shooter PWM value
+    public double[] getTrajectory() {   //Returns 4 vars: Angle to turn (+Right), shooter angle (degrees from horizon), distance (in), height (in)
+        if(points.isEmpty()) return new double[0];
         Point[] targetPoints = new Point[points.size()];
         for(int i = 0; i < targetPoints.length; i++) targetPoints[i] = getTargetPoint(points.get(i));
         Point targetPoint = pickIdealTarget(targetPoints);
@@ -85,12 +87,12 @@ public class Trajectory {
         double midY = constants[Constants.CAMERA_PIXEL_HEIGHT.code]/2;
         double angleFromCamera = (((midY-targetPoint.y)/constants[Constants.CAMERA_PIXEL_HEIGHT.code])*constants[Constants.CAMERA_VERTICAL_FOV.code])+constants[Constants.CAMERA_ANGLE.code];
         double distFromCamera = (constants[Constants.TARGET_HEIGHT.code]-constants[Constants.CAMERA_HEIGHT.code])/Math.tan(Math.toRadians(angleFromCamera));
+
         double distFromShooter = distFromCamera-constants[Constants.SHOOTER_DISTANCE.code];
         double heightFromShooter = constants[Constants.TARGET_HEIGHT.code]-constants[Constants.SHOOTER_HEIGHT.code];
         double angleFromShooter = Math.toDegrees(Math.atan2(heightFromShooter, distFromShooter));
 
-
-        return new double[]{azimuth, 0, 0};
+        return new double[]{azimuth, angleFromShooter, distFromShooter, heightFromShooter};
     }
 
     public boolean isVerticalLine(Point a, Point b) { //Args: 2 Points to form a line
@@ -122,7 +124,6 @@ public class Trajectory {
         }
         return candidates[retrIndex];
     }
-
 
 
 }

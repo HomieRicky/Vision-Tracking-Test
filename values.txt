@@ -9,14 +9,14 @@ SHOOTER_DISTANCE = 3
 #Height of the shooter exit point above ground
 SHOOTER_HEIGHT = 5
 
-#Height of the bottom of the target above ground
-TARGET_HEIGHT = 73.5
+#Height of the top of the target above ground
+TARGET_HEIGHT = 99
 
 #Width of the reflective strip
-TARGET_STRIP_X = 10
+TARGET_STRIP_X = 14
 
 #Height of the reflective strip
-TARGET_STRIP_Y = 8
+TARGET_STRIP_Y = 20
 
 #Diameter of the ball
 BALL_DIAMETER=10

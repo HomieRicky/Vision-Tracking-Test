@@ -95,7 +95,7 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
         }
         Mat n = new Mat(blue.rows(), blue.cols(), blue.type());
         Imgproc.fillPoly(n, simpleHullPointMats, Scalar.all(255));
-        test t = new test(n, simpleHullPointMats.get(1));
+        //test t = new test(n, simpleHullPointMats.get(1));
         if(saveFilterProcess) {
             Mat fourPoint = new Mat(blue.rows(), blue.cols(), blue.type());
             Imgproc.fillPoly(fourPoint, simpleHullPointMats, Scalar.all(255));
@@ -113,7 +113,7 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
             Imgcodecs.imwrite(fourPointOutPath, fourPoint);
 
             //VIDEO OUTPUT
-        /*
+            /*
         VideoWriter vw = new VideoWriter(path.substring(0, path.lastIndexOf(".")) + ".avi", -1, 1, new Size(blue.width(), blue.height()));
         Imgproc.putText(m, "ORIGINAL", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(150), 5);
         vw.write(m);
@@ -126,9 +126,9 @@ public class FrameDecoder implements Callable<List<MatOfPoint>> {
         Imgproc.putText(fourPoint, "SIMPLIFIED FOUR-EDGE SHAPES", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
         vw.write(fourPoint);
         vw.release();
-        */
+            */
 
-            System.out.println("Processed for file: " + path);
+            //System.out.println("Processed for file: " + path);
         }
         return simpleHullPointMats;
     }
