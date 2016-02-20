@@ -81,15 +81,15 @@ public class DriverStream extends JFrame {
                     Imgproc.circle(overlay, t.getTargetPoint(point), 3, new Scalar(0, 0, 255, 200), 2);
                 }
             }
-            overtrayImage(driverStream.frame, overlay);
+            Mat displayFrame = new Mat(driverStream.frame.rows(), driverStream.frame.cols(), driverStream.frame.type());
+            byte[] data = new byte[displayFrame.rows()*displayFrame.cols()*displayFrame.channels()];
+            driverStream.frame.get(0, 0, data);
+            displayFrame.put(0, 0, data);
+            overtrayImage(displayFrame, overlay);
             driverStream.console.setText(errText + "\r\n" + latency + "\r\n FPS: " + String.valueOf(fps));
-            if (!driverStream.frame.empty()) {
-                //System.out.println("Frame not empty");
-                Mat tmpFrame = driverStream.frame;
-                BufferedImage buf = matToBufferedImage(tmpFrame);
-                ImageIcon icon = new ImageIcon(buf);
-                driverStream.image.setIcon(icon);
-            }
+            BufferedImage buf = matToBufferedImage(displayFrame);
+            ImageIcon icon = new ImageIcon(buf);
+            driverStream.image.setIcon(icon);
             //driverStream.repaint();
         }
 

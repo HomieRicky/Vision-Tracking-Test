@@ -19,7 +19,12 @@ public class CameraInputStream implements Runnable {
 
     public CameraInputStream(DriverStream stream) {
         try {
-            url = new URL("http://10.8.65.11/axis-cgi/jpg/image.cgi?resolution=640x480");
+            String ip = "10.8.65.11";
+            url = new URL("http://" + ip + "/axis-cgi/jpg/image.cgi?resolution=640x480");
+            //http://IPADDRESS/?camid=[CHANNEL]
+            //http://IPADDRESS/?action=stream
+            //http://IPADDRESS/video.mjpg
+            //http://IPADDRESS/videostream.asf?user=[USERNAME]&pwd=[PASSWORD]&resolution=[WIDTH]*[HEIGHT] for FFMPEG
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
