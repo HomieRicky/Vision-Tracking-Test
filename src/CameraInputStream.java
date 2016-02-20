@@ -1,17 +1,9 @@
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Driver;
-import java.util.concurrent.Callable;
 
 /**
  * Created by Ricardo on 2016-02-19.
@@ -60,7 +52,7 @@ public class CameraInputStream implements Runnable {
                 System.out.println("Sent legit frame!");
             } catch (Exception e) {
                 sendError(e.getMessage());
-                System.out.println(e.getMessage());
+                //System.out.println(e.getMessage());
             }
             if(frame != null) sendToWindow(frame);
             else sendError("no frame");

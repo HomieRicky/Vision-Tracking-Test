@@ -1,17 +1,13 @@
 import org.opencv.core.*;
 import org.opencv.core.Point;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.video.Video;
-import org.opencv.videoio.VideoCapture;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
-import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -35,7 +31,7 @@ public class DriverStream extends JFrame {
 
     public static void main(String args[]) {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        Mat baseFrame = new Mat(480, 640, CvType.CV_8UC3, new Scalar(0, 255, 0));
+        Mat baseFrame = Imgcodecs.imread("logo.jpg");
         DriverStream driverStream = new DriverStream();
         CameraInputStream cameraStream = new CameraInputStream(driverStream);
         ExecutorService executor = Executors.newFixedThreadPool(1);
@@ -88,36 +84,52 @@ public class DriverStream extends JFrame {
             overtrayImage(driverStream.frame, overlay);
             driverStream.console.setText(errText + "\r\n" + latency + "\r\n FPS: " + String.valueOf(fps));
             if (!driverStream.frame.empty()) {
-                ImageIcon iconImage = new ImageIcon(matToBufferedImage(driverStream.frame));
-                driverStream.image.setIcon(iconImage);
+                //System.out.println("Frame not empty");
+                Mat tmpFrame = driverStream.frame;
+                BufferedImage buf = matToBufferedImage(tmpFrame);
+                ImageIcon icon = new ImageIcon(buf);
+                driverStream.image.setIcon(icon);
             }
-            driverStream.repaint();
+            //driverStream.repaint();
         }
 
     }
 
-    @Override
-    public void paint(Graphics g) {
-        g.drawImage(matToBufferedImage(frame), 0, FRAME_OFFSET, this);
-
-    }
+    //@Override
+    //public void paint(Graphics g) {
+    //    g.drawImage(matToBufferedImage(frame), 0, FRAME_OFFSET, this);
+    //}
 
     public DriverStream() {
         frame = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(128));
 
         panel = new JPanel();
-        console = new JTextArea("...", 10, 50);
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        console = new JTextArea(10, 50);
         console.setRows(5);
-        console.setLineWrap(true);;
+        console.setLineWrap(true);
+        console.setEditable(false);
 
-        image = new JLabel(new ImageIcon(matToBufferedImage(frame)));
+        Mat tmpFrame = frame;
+        BufferedImage buf = matToBufferedImage(tmpFrame);
+        ImageIcon icon = new ImageIcon(buf);
+        image = new JLabel(icon);
 
-        add(image);
-        add(console);
+        add(panel);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(console, gbc);
+        gbc.gridy = 1;
+        panel.add(image, gbc);
+
+        //console.setAlignmentY();
+
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        setSize(640, 480+FRAME_OFFSET);
+        //setSize(640, 480+FRAME_OFFSET);
+        pack();
         setVisible(true);
     }
 
