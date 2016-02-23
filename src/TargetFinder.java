@@ -23,7 +23,7 @@ public class TargetFinder {
         File fpath = new File("targ\\" + i + ".jpg");
         String path = fpath.getAbsolutePath();
         Mat frame = Imgcodecs.imread(path);
-        FrameDecoder fd = new FrameDecoder(frame);
+        FrameProcessor fd = new FrameProcessor(frame);
         retrReciever = es.submit(fd);
         while(!retrReciever.isDone()) {}
         List<MatOfPoint> points = retrReciever.get();
@@ -38,7 +38,7 @@ public class TargetFinder {
             for (MatOfPoint point : points) {
                 Imgproc.circle(overlay, t.getTargetPoint(point), 3, new Scalar(0, 0, 255, 200), 2);
             }
-            frame = FrameDecoder.overtrayImage(frame, overlay);
+            frame = FrameProcessor.overtrayImage(frame, overlay);
         }
         Imgcodecs.imwrite(path.substring(0, path.lastIndexOf(".")) + "E.png", frame);
         System.out.println("Done!");

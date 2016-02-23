@@ -104,9 +104,9 @@ public class Trajectory {
         Point retrPoint = null;
         Point[] pointArray = m.toArray();
         for(int i = 0; i < pointArray.length; i++) {
-            if(!isVerticalLine(pointArray[i], FrameDecoder.getNext(pointArray, i))) {
-                Point p = new Point(((pointArray[i].x+FrameDecoder.getNext(pointArray, i).x))/2,
-                        ((pointArray[i].y+FrameDecoder.getNext(pointArray, i).y))/2);
+            if(!isVerticalLine(pointArray[i], FrameProcessor.getNext(pointArray, i))) {
+                Point p = new Point(((pointArray[i].x+FrameProcessor.getNext(pointArray, i).x))/2,
+                        ((pointArray[i].y+FrameProcessor.getNext(pointArray, i).y))/2);
                 if(retrPoint == null) retrPoint = p;
                 else if(retrPoint.y > p.y) retrPoint = p;
             }

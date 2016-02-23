@@ -7,17 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class FrameDecoder implements Callable<List<MatOfPoint>> {
+public class FrameProcessor implements Callable<List<MatOfPoint>> {
     String path;
     Mat m;
     boolean saveFilterProcess;
 
-    public FrameDecoder(Mat src) {
+    public FrameProcessor(Mat src) {
         m = src;
         saveFilterProcess = false;
     }
 
-    public FrameDecoder(String filepath) {
+    public FrameProcessor(String filepath) {
         path = filepath;
         m = Imgcodecs.imread(path);
         saveFilterProcess = true;
