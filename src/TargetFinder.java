@@ -38,35 +38,13 @@ public class TargetFinder {
             for (MatOfPoint point : points) {
                 Imgproc.circle(overlay, t.getTargetPoint(point), 3, new Scalar(0, 0, 255, 200), 2);
             }
-            frame = overtrayImage(frame, overlay);
+            frame = FrameDecoder.overtrayImage(frame, overlay);
         }
         Imgcodecs.imwrite(path.substring(0, path.lastIndexOf(".")) + "E.png", frame);
         System.out.println("Done!");
     }
 
-    // http://stackoverflow.com/questions/21080722/merge-a-png-with-transparency-onto-another-image
-    // Written by stackoverflow user "stack-o-frankie"
-    private static Mat overtrayImage( Mat background, Mat foreground ) {
-        // The background and the foreground are assumed to be of the same size.
-        Mat destination = new Mat( background.size(), background.type() );
 
-        for ( int y = 0; y < ( int )( background.rows() ); ++y ) {
-            for ( int x = 0; x < ( int )( background.cols() ); ++x ) {
-                double b[] = background.get( y, x );
-                double f[] = foreground.get( y, x );
-
-                double alpha = f[3] / 255.0;
-
-                double d[] = new double[3];
-                for ( int k = 0; k < 3; ++k ) {
-                    d[k] = f[k] * alpha + b[k] * ( 1.0 - alpha );
-                }
-
-                destination.put( y, x, d );
-            }
-        }
-        return destination;
-    }
 }
 
 

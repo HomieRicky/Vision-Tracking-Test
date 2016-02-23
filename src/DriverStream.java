@@ -1,134 +1,98 @@
-import org.opencv.core.*;
-import org.opencv.core.Point;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
- * Created by Ricardo on 2016-02-19.
+ * Created by Ricardo on 2016-02-21.
  */
 public class DriverStream extends JFrame {
+    JLabel image;
+    JLabel processedImage;
+    JPanel panel;
+    JTextArea console;
+    JLabel infoLabel;
+    static USBCameraInputStream stream;
+    BufferedImage frameBuffer;
+    boolean frameUpdated = false;
+    String consoleBuffer = "";
+    long timestamp = 0;
+    long lastTimestamp = System.currentTimeMillis();
+    int frameCounter = 0;
 
-    private static final int FRAME_OFFSET = 150;
-    public Mat frame;
-    public static String errText = "";
-    public static float fps = 0;
-    public JPanel panel;
-    public JTextArea console;
-    public JLabel image;
-    public BufferedImage imgBuffer = null;
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        Mat baseFrame = Imgcodecs.imread("logo.jpg");
-        DriverStream driverStream = new DriverStream();
-        CameraInputStream cameraStream = new CameraInputStream(driverStream);
-        ExecutorService executor = Executors.newFixedThreadPool(1);
-        Runnable camThread = cameraStream;
+        DriverStream d = new DriverStream();
+        stream = new USBCameraInputStream(d, 30);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Runnable camThread = stream;
         executor.execute(camThread);
-        errText = "Started";
 
         while(true) {
-            if(driverStream.imgBuffer == null) driverStream.frame = baseFrame;
-            else driverStream.frame = bufferedImageToMat(driverStream.imgBuffer);
-            long timer = System.currentTimeMillis();
-            FrameDecoder fd;
-            System.out.println(driverStream.frame.toString());
-            if(!driverStream.frame.empty()) fd = new FrameDecoder(driverStream.frame);
-            else {
-                fd = new FrameDecoder(new Mat(480, 640, CvType.CV_8UC3, Scalar.all(128)));
-                System.out.println("bad frame");
-            }
-            ExecutorService es = Executors.newSingleThreadExecutor();
-            Future<java.util.List<MatOfPoint>> retrReciever;
-            retrReciever = es.submit(fd);
-            while (!retrReciever.isDone()) {
-            }
-            timer = System.currentTimeMillis() - timer;
-            String latency = "Processing latency: " + String.valueOf(timer);
-            List<MatOfPoint> targets;
-            try {
-                targets = retrReciever.get();
-            } catch (InterruptedException e) {
-                errText = e.getMessage();
-                targets = new ArrayList<MatOfPoint>();
-            } catch (ExecutionException e) {
-                errText = e.getMessage();
-                targets = new ArrayList<MatOfPoint>();
-            }
-            Trajectory t = new Trajectory(targets);
-            double[] trajectoryVals = t.getTrajectory();
-
-            Mat overlay = new Mat(driverStream.frame.rows(), driverStream.frame.cols(), CvType.CV_8UC4, new Scalar(0, 0, 0, 0));
-            Imgproc.polylines(overlay, targets, true, new Scalar(255, 0, 0, 255), 1);
-            Imgproc.line(overlay, new Point(overlay.cols() / 2, 0), new Point(overlay.cols() / 2, overlay.rows()), new Scalar(0, 0, 255, 255), 1);
-            Imgproc.line(overlay, new Point(0, overlay.rows() / 2), new Point(overlay.cols(), overlay.rows() / 2), new Scalar(0, 0, 255, 255), 1);
-
-            if(trajectoryVals.length == 0) errText = " No trajectory.";
-            else {
-                for (MatOfPoint point : targets) {
-                    Imgproc.circle(overlay, t.getTargetPoint(point), 3, new Scalar(0, 0, 255, 200), 2);
+            d.consoleBuffer = trimLines(d.consoleBuffer);
+            d.console.setText(d.consoleBuffer);
+            //d.console.setRows(5);
+            if(d.frameUpdated) {
+                d.image.setIcon(new ImageIcon(d.frameBuffer));
+                d.frameCounter++;
+                long time = d.timestamp;
+                long interval;
+                if((interval = time-d.lastTimestamp) >= 1000) {
+                    double fps = (d.frameCounter*1.0)/(interval/1000.0);
+                    d.infoLabel.setText("FPS: " + (float) fps);
+                    d.lastTimestamp = time;
+                    d.frameCounter = 0;
                 }
+                d.frameUpdated = false;
             }
-            Mat displayFrame = new Mat(driverStream.frame.rows(), driverStream.frame.cols(), driverStream.frame.type());
-            byte[] data = new byte[displayFrame.rows()*displayFrame.cols()*displayFrame.channels()];
-            driverStream.frame.get(0, 0, data);
-            displayFrame.put(0, 0, data);
-            overtrayImage(displayFrame, overlay);
-            driverStream.console.setText(errText + "\r\n" + latency + "\r\n FPS: " + String.valueOf(fps));
-            BufferedImage buf = matToBufferedImage(displayFrame);
-            ImageIcon icon = new ImageIcon(buf);
-            driverStream.image.setIcon(icon);
-            //driverStream.repaint();
+            d.pack();
         }
-
     }
 
-    //@Override
-    //public void paint(Graphics g) {
-    //    g.drawImage(matToBufferedImage(frame), 0, FRAME_OFFSET, this);
-    //}
-
     public DriverStream() {
-        frame = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(128));
-
         panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        console = new JTextArea(10, 50);
+        console = new JTextArea(5, 60);
         console.setRows(5);
         console.setLineWrap(true);
         console.setEditable(false);
-
-        Mat tmpFrame = frame;
-        BufferedImage buf = matToBufferedImage(tmpFrame);
-        ImageIcon icon = new ImageIcon(buf);
-        image = new JLabel(icon);
+        infoLabel = new JLabel("FPS: 0    Bitrate: 0 Mbps");
+        image = new JLabel();
+        processedImage = new JLabel();
+        try {
+            image.setIcon(new ImageIcon(ImageIO.read(new File("logo.jpg"))));
+            processedImage.setIcon(new ImageIcon(ImageIO.read(new File("logoBlack.jpg"))));
+        } catch (IOException e) {
+            consoleBuffer += "Failed to load logo files.";
+        }
 
         add(panel);
         gbc.gridx = 0;
         gbc.gridy = 0;
-        panel.add(console, gbc);
-        gbc.gridy = 1;
         panel.add(image, gbc);
-
-        //console.setAlignmentY();
+        gbc.gridx = 1;
+        panel.add(processedImage, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        panel.add(infoLabel, gbc);
+        gbc.gridy = 2;
+        panel.add(console, gbc);
 
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        //setSize(640, 480+FRAME_OFFSET);
         pack();
         setVisible(true);
     }
@@ -156,25 +120,18 @@ public class DriverStream extends JFrame {
         return m;
     }
 
-    private static Mat overtrayImage( Mat background, Mat foreground ) {
-        // The background and the foreground are assumed to be of the same size.
-        Mat destination = new Mat( background.size(), background.type() );
-
-        for ( int y = 0; y < ( int )( background.rows() ); ++y ) {
-            for ( int x = 0; x < ( int )( background.cols() ); ++x ) {
-                double b[] = background.get( y, x );
-                double f[] = foreground.get( y, x );
-
-                double alpha = f[3] / 255.0;
-
-                double d[] = new double[3];
-                for ( int k = 0; k < 3; ++k ) {
-                    d[k] = f[k] * alpha + b[k] * ( 1.0 - alpha );
-                }
-
-                destination.put( y, x, d );
-            }
+    public static String trimLines(String in) {
+        int newlineCount = 0;
+        int index = 0;
+        ArrayList<Integer> indexes = new ArrayList<Integer>();
+        while((index = in.indexOf("\r\n", index+1)) != -1) {
+            newlineCount++;
+            indexes.add(index);
         }
-        return destination;
+        if(newlineCount > 5) {
+            return in.substring(indexes.get(newlineCount-5)+2);
+        }
+        return in;
     }
+
 }
