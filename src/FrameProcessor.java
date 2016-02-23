@@ -51,14 +51,14 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
         Imgproc.cvtColor(contours, contours, Imgproc.COLOR_RGB2GRAY);
         Imgproc.findContours(contours, points, contours, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
         contours = new Mat(blue.rows(), blue.cols(), blue.type());
-        System.out.println(points.size());
+        //System.out.println(points.size());
         List<MatOfInt> hulls = new ArrayList<MatOfInt>();
         List<MatOfInt4> convexityDefects = new ArrayList<MatOfInt4>();
         List<MatOfPoint> hullPointMats = new ArrayList<MatOfPoint>();
         List<MatOfPoint>simpleHullPointMats = new ArrayList<MatOfPoint>();
         for(int i = 0; i < points.size(); i++) {
             if(points.get(i).rows() > 100) {
-                System.out.println("Point set " + i + ": " + points.get(i).toString());
+                //System.out.println("Point set " + i + ": " + points.get(i).toString());
 
                 MatOfInt hull = new MatOfInt();
                 Imgproc.convexHull(points.get(i), hull);
@@ -90,12 +90,14 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
                 }
                 if(simpleHull.rows() == 4 && angleSum < 360) simpleHullPointMats.add(simpleHull);
                 Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 0.5, new Scalar(255, 128, 128), 1);
-                System.out.println("Shape interior angle sum: " + angleSum);
+                //System.out.println("Shape interior angle sum: " + angleSum);
             }
         }
-        Mat n = new Mat(blue.rows(), blue.cols(), blue.type());
-        Imgproc.fillPoly(n, simpleHullPointMats, Scalar.all(255));
+        //Mat n = new Mat(blue.rows(), blue.cols(), blue.type());
+        //Imgproc.fillPoly(n, simpleHullPointMats, Scalar.all(255));
+        //m = n;
         //test t = new test(n, simpleHullPointMats.get(1));
+        /*
         if(saveFilterProcess) {
             Mat fourPoint = new Mat(blue.rows(), blue.cols(), blue.type());
             Imgproc.fillPoly(fourPoint, simpleHullPointMats, Scalar.all(255));
@@ -126,10 +128,10 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
         Imgproc.putText(fourPoint, "SIMPLIFIED FOUR-EDGE SHAPES", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
         vw.write(fourPoint);
         vw.release();
-            */
+
 
             //System.out.println("Processed for file: " + path);
-        }
+        }*/
         return simpleHullPointMats;
     }
 
@@ -195,7 +197,7 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
                     mp = new MatOfPoint(newPoints);
                 }
             }
-            System.out.println("Points[].length = " + points.length);
+            //System.out.println("Points[].length = " + points.length);
         }
         return mp;
     }

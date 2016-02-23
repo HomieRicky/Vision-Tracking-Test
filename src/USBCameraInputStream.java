@@ -34,6 +34,14 @@ public class USBCameraInputStream implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                sendMsg("Uncaught exception in USB camera stream: " + e.getMessage());
+                shutdownThread();
+                dashboard.interruptedThread = this;
+            }
+        });
         while(!shutdown) {
             try {
                 try (
@@ -53,12 +61,12 @@ public class USBCameraInputStream implements Runnable {
                         int imageSize = in.readInt();
                         dataBuffer = growIfNecessary(dataBuffer, imageSize);
                         in.readFully(dataBuffer, 0, imageSize);
-                        sendMsg("Got frame with " + imageSize + " bytes.");
+                        //sendMsg("Got frame with " + imageSize + " bytes.");
                         sendFrame(ImageIO.read(new ByteArrayInputStream(dataBuffer)), imageSize);
                     }
                 } catch (IOException e) {
                     sendMsg(e.getMessage());
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 } finally {
                     Thread.sleep(1000);
                 }
@@ -82,8 +90,8 @@ public class USBCameraInputStream implements Runnable {
 
     public void sendMsg(String msg) {
 
-        //dashboard.consoleBuffer += (msg + "\n");
-        System.out.println(msg);
+        dashboard.consoleBuffer += (msg + "\n");
+        //System.out.println(msg);
     }
 
     /**

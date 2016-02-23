@@ -29,19 +29,28 @@ public class FrameProcessHandler implements Runnable {
     public FrameProcessHandler(int processLimit, DriverStream d) {
         driverStream = d;
         threadLimit = processLimit;
-        processes = new ArrayList<>(processLimit);
-        matOfPointCollector = new ArrayList<>(processLimit);
-        services = new ArrayList<>(processLimit);
-        for(int i = 0; i < processLimit; i++) {
-            services.set(i, Executors.newSingleThreadExecutor());
-            free.set(i, true);
-            collectOrder.set(i, -1);
+        processes = new ArrayList<>(threadLimit);
+        matOfPointCollector = new ArrayList<>(threadLimit);
+        services = new ArrayList<>(threadLimit);
+        free = new ArrayList<>(threadLimit);
+        collectOrder = new ArrayList<>(threadLimit);
+        matStorage = new ArrayList<>(threadLimit);
+        timer = new ArrayList<>(threadLimit);
+        for(int i = 0; i < threadLimit; i++) {
+            services.add(i, Executors.newSingleThreadExecutor());
+            free.add(i, true);
+            collectOrder.add(i, -1);
+            matStorage.add(i, new Mat());
+            processes.add(i, null);
+            matOfPointCollector.add(i, null);
+            timer.add(i, null);
         }
         Trajectory.importValues();
     }
 
     public boolean addFrame(BufferedImage img) {
         if(threadsInUse == threadLimit) return false;
+        //System.out.println("added frame");
         Mat m = DriverStream.bufferedImageToMat(img);
         int id = assignProcess(m);
         matStorage.set(id, m);
@@ -59,6 +68,14 @@ public class FrameProcessHandler implements Runnable {
     }
 
     public void run() {
+        Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                sendMsg("Uncaught exception in process handler: " + e.getMessage());
+                shutdownThread();
+                driverStream.interruptedThread = this;
+            }
+        });
         while(!shutdown) {
             for(int i = 0; i < threadLimit; i++) {
                 try {
@@ -86,20 +103,25 @@ public class FrameProcessHandler implements Runnable {
                             } else if (trajectoryVals == new double[]{-2}) {
                                 infoText = "Targets spotted. None shootable.";
                             }
+
                             m = FrameProcessor.overtrayImage(m, overlay);
+                            //m = overlay;
                         } else {
                             infoText = "No targets spotted.";
                         }
                         BufferedImage img = DriverStream.matToBufferedImage(m);
                         collectOrder.set(i, -1);
+                        shiftOrder();
                         free.set(i, true);
                         threadsInUse--;
                         sendData(img, a, d, timer.get(i), h, infoText);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    sendMsg(e.getMessage());
                 } catch (ExecutionException e) {
-                    e.printStackTrace();
+                    sendMsg(e.getMessage());
+                } catch (IllegalArgumentException e) {
+                    sendMsg(e.getMessage());
                 }
             }
         }
@@ -114,12 +136,21 @@ public class FrameProcessHandler implements Runnable {
     }
 
     public void sendMsg(String msg) {
-        //dashboard.consoleBuffer += (msg + "\n");
-        System.out.println(msg);
+        driverStream.consoleBuffer += (msg + "\n");
+        //System.out.println(msg);
     }
 
+    public int getThreadsInUse() { return threadsInUse; }
+
     public void sendData(BufferedImage img, double azimuth, double dist, long startTime, boolean hasTargets, String info) {
+        //System.out.println("Sent processed frame.");
         driverStream.processedFrameBuffer = img;
+        driverStream.processInfoBuffer = info;
+        driverStream.azimuth = azimuth;
+        driverStream.distance = dist;
+        driverStream.processLatency = (int) (System.currentTimeMillis()-startTime);
+        driverStream.sendData = hasTargets;
+        driverStream.processedFrameUpdated = true;
     }
 
     public void shutdownThread() {
