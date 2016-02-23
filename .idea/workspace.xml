@@ -2,13 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ce0946b6-7091-4843-a0bf-6b4df8392fef" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/USBCameraInputStream.java" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/CameraInputStream.java" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/TargetFinder/TargetFinder.class" afterPath="$PROJECT_DIR$/out/production/TargetFinder/TargetFinder.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/DriverStream.java" afterPath="$PROJECT_DIR$/src/DriverStream.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/FrameDecoder.java" afterPath="$PROJECT_DIR$/src/FrameDecoder.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/TargetFinder.java" afterPath="$PROJECT_DIR$/src/TargetFinder.java" />
     </list>
     <list id="a2dc0dc5-ee5c-4368-aa52-3e2b7b5c0051" name="Rejected commit: Default" comment="75% complete!" />
     <ignored path="TargetFinder.iws" />
@@ -574,7 +569,13 @@
       <option name="project" value="LOCAL" />
       <updated>1456009576259</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Working video reception with the Microsoft Lifecam 3000">
+      <created>1456185883794</created>
+      <option name="number" value="00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1456185883795</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -622,7 +623,8 @@
     <MESSAGE value="Now finds angles and distances to targets." />
     <MESSAGE value="Fixed drawing stuff" />
     <MESSAGE value="Small things and preparing for lifecam use" />
-    <option name="LAST_COMMIT_MESSAGE" value="Small things and preparing for lifecam use" />
+    <MESSAGE value="Working video reception with the Microsoft Lifecam 3000" />
+    <option name="LAST_COMMIT_MESSAGE" value="Working video reception with the Microsoft Lifecam 3000" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
