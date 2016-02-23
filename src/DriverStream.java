@@ -23,13 +23,17 @@ public class DriverStream extends JFrame {
     JPanel panel;
     JTextArea console;
     JLabel infoLabel;
+
     static USBCameraInputStream stream;
     BufferedImage frameBuffer;
+    BufferedImage processedFrameBuffer;
     boolean frameUpdated = false;
+    boolean processedFrameUpdated = false;
     String consoleBuffer = "";
     long timestamp = 0;
     long lastTimestamp = System.currentTimeMillis();
     int frameCounter = 0;
+
 
 
     public static void main(String args[]) throws InterruptedException {
@@ -56,6 +60,9 @@ public class DriverStream extends JFrame {
                     d.frameCounter = 0;
                 }
                 d.frameUpdated = false;
+            }
+            if(d.processedFrameUpdated) {
+
             }
             d.pack();
         }

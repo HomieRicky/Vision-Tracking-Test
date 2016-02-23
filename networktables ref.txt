@@ -1,0 +1,11 @@
+required networktables updates from client:
+
+	double distance (inches)
+	double azimuth (degrees)
+	boolean targetFound
+
+required updates from robot:
+
+	int state (0 = no ball, 1 = ball, 2 = found target, 3 = locked on target, 4 = ready to fire)
+		GUI colors (0 = grey, 1 = green, 2 = yellow, 3 = red, 4 = flashing red/green)
+	
