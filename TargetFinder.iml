@@ -19,5 +19,14 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="x64" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$USER_HOME$/wpilib/networktables/NetworkTableViewer/lib/networktables-desktop.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>

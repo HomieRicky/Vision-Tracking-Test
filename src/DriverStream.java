@@ -1,3 +1,6 @@
+import edu.wpi.first.wpilibj.networktables.NetworkTable;
+import edu.wpi.first.wpilibj.tables.ITable;
+import edu.wpi.first.wpilibj.tables.ITableListener;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -14,14 +17,22 @@ import java.io.IOException;
 /**
  * Created by Ricardo on 2016-02-21.
  */
-public class DriverStream extends JFrame {
+public class DriverStream extends JFrame implements ITableListener {
+    public static final String VERSION = "Prerelease-20160223b";
+
     JLabel image;
     JLabel processedImage;
     JPanel panel;
     JLabel fpsLabel;
     JLabel processInfo;
+    JPanel consoles;
     JTextArea console;
     JScrollPane consoleContainer;
+    JTextArea roboConsole;
+    JScrollPane roboConsoleContainer;
+
+    static NetworkTable visionTbl;
+    static NetworkTable modeTbl;
 
     static USBCameraInputStream stream;
     static FrameProcessHandler processor;
@@ -30,7 +41,10 @@ public class DriverStream extends JFrame {
     boolean frameUpdated = false;
     boolean processedFrameUpdated = false;
     boolean sendData = false;
+    static boolean modeChanged = false;
+    static int mode = 0;
     String consoleBuffer = "";
+    static String roboConsoleBuffer = "";
     String processInfoBuffer = "";
     double azimuth = 0;
     double distance = 0;
@@ -41,10 +55,18 @@ public class DriverStream extends JFrame {
 
     Object interruptedThread = null;
 
+    int flash = 0;
+
 
     public static void main(String args[]) throws InterruptedException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         DriverStream d = new DriverStream();
+        NetworkTable.setClientMode();
+        NetworkTable.setIPAddress("10.8.65.52");
+        visionTbl = NetworkTable.getTable("vision");
+        modeTbl = NetworkTable.getTable("status");
+        visionTbl.addTableListener(d);
+        modeTbl.addTableListener(d);
         stream = new USBCameraInputStream(d, 30);
         processor = new FrameProcessHandler(1, d);
         Thread processHandlerThread = new Thread(processor);
@@ -74,10 +96,8 @@ public class DriverStream extends JFrame {
                 d.processedImage.setIcon(new ImageIcon(d.processedFrameBuffer));
                 d.processInfo.setText("Azimuth: " + d.azimuth + " | Distance: " + d.distance + " | Latency: " + d.processLatency
                         + " | Threads in use: " + d.processor.getThreadsInUse() + " | " + d.processInfoBuffer);
-                //Insert networktables code here
                 d.processedFrameUpdated = false;
             }
-            d.pack();
             if(d.interruptedThread != null) {
                 System.out.println("Restarting " + d.interruptedThread.toString());
                 if(d.interruptedThread instanceof FrameProcessHandler) {
@@ -91,6 +111,22 @@ public class DriverStream extends JFrame {
                 }
                 d.interruptedThread = null;
             }
+            d.roboConsole.setText(roboConsoleBuffer);
+            if(modeChanged) {
+                switch(d.mode) {
+                    case 0: d.panel.setBackground(Color.LIGHT_GRAY); break;
+                    case 1: d.panel.setBackground(Color.GREEN); break;
+                    case 2: d.panel.setBackground(Color.YELLOW); break;
+                    case 3: d.panel.setBackground(Color.RED); break;
+                    case 4: d.flash++; break;
+                }
+                if(d.mode != 4) d.flash = 0;
+                modeChanged = false;
+            }
+            if(d.flash > 0) {
+                if(d.flash == 1) { d.panel.setBackground(Color.RED); d.flash++; }
+                else if(d.flash == 2) { d.panel.setBackground(Color.GREEN); d.flash--; }
+            }
         }
     }
 
@@ -98,14 +134,25 @@ public class DriverStream extends JFrame {
         panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
+        consoles = new JPanel(new GridLayout(2, 1));
         console = new JTextArea(5, 60);
         console.setRows(5);
         console.setLineWrap(true);
         console.setEditable(false);
         consoleContainer = new JScrollPane(console);
-        consoleContainer.setMinimumSize(new Dimension(480, 80));
         consoleContainer.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         consoleContainer.setPreferredSize(new Dimension(600, 100));
+        roboConsole = new JTextArea(5, 60);
+        roboConsole.setRows(5);
+        roboConsole.setLineWrap(true);
+        roboConsole.setEditable(false);
+        roboConsole.setBackground(Color.LIGHT_GRAY);
+        roboConsole.setDisabledTextColor(Color.WHITE);
+        roboConsoleContainer = new JScrollPane(roboConsole);
+        roboConsoleContainer.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        roboConsoleContainer.setPreferredSize(new Dimension(600, 100));
+        consoles.add(consoleContainer);
+        consoles.add(roboConsoleContainer);
         processInfo = new JLabel();
         fpsLabel = new JLabel("FPS: 0    Bitrate: 0 Mbps");
         image = new JLabel();
@@ -128,11 +175,12 @@ public class DriverStream extends JFrame {
         gbc.gridy = 1;
         panel.add(fpsLabel, gbc);
         gbc.gridy = 2;
-        panel.add(consoleContainer, gbc);
+        panel.add(consoles, gbc);
         gbc.gridx = 1;
         panel.add(processInfo, gbc);
 
-
+        setTitle("WarpGUI ver. " + VERSION);
+        panel.setBackground(Color.LIGHT_GRAY);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
         setVisible(true);
@@ -161,23 +209,16 @@ public class DriverStream extends JFrame {
         return m;
     }
 
-    /*public static String trimLines(String in) {
-        int index = 0;
-        ArrayList<Integer> indexes = new ArrayList<Integer>();
-        while((index = in.indexOf("\r\n", index+1)) != -1) {
-            indexes.add(index);
-        }
-        if(indexes.size() >= 5) {
-            System.out.println("trim " + (indexes.size()-5));
-            return in.substring(indexes.get(indexes.size()-5)+2);
-        }
-        return in;
-    }*/
-
     public static String trimLines(String in) {
         int max = 5*60;
         if(in.length()>max) return in.substring(in.length()-max);
         return in;
     }
 
+    @Override
+    public void valueChanged(ITable iTable, String s, Object o, boolean b) {
+        if(s.equals("messages") && o instanceof String) roboConsoleBuffer += o + "\n";
+        else if(s.equals("warnings") && o instanceof String) roboConsoleBuffer += "[WARNING]" + o + "\n";
+        else if(s.equals("mode") && o instanceof Integer) { modeChanged = true; mode = (int) o; }
+    }
 }
