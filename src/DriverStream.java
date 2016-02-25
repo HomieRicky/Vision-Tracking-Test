@@ -13,12 +13,14 @@ import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Created by Ricardo on 2016-02-21.
  */
 public class DriverStream extends JFrame implements ITableListener {
-    public static final String VERSION = "Prerelease-20160223b";
+    public static final String VERSION = "Prerelease-20160225a";
 
     JLabel image;
     JLabel processedImage;
@@ -54,20 +56,18 @@ public class DriverStream extends JFrame implements ITableListener {
     int processLatency = 0;
 
     Object interruptedThread = null;
+    boolean usingLocalCamera = false;
 
     int flash = 0;
 
+    static InetAddress robotAddress;
 
     public static void main(String args[]) throws InterruptedException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         DriverStream d = new DriverStream();
-        NetworkTable.setClientMode();
-        NetworkTable.setIPAddress("10.8.65.52");
-        visionTbl = NetworkTable.getTable("vision");
-        modeTbl = NetworkTable.getTable("status");
-        visionTbl.addTableListener(d);
-        modeTbl.addTableListener(d);
-        stream = new USBCameraInputStream(d, 30);
+        attemptConnect(d);
+        //initNetworkTables(d);
+        //stream = new USBCameraInputStream(d, true, 1);
         processor = new FrameProcessHandler(1, d);
         Thread processHandlerThread = new Thread(processor);
         processHandlerThread.start();
@@ -100,12 +100,16 @@ public class DriverStream extends JFrame implements ITableListener {
             }
             if(d.interruptedThread != null) {
                 System.out.println("Restarting " + d.interruptedThread.toString());
-                if(d.interruptedThread instanceof FrameProcessHandler) {
+                System.out.println("d = " + d.interruptedThread.getClass().getTypeName());
+                if(d.interruptedThread.getClass().getName().contains("FrameProcessHandler")) {
+                    System.out.println("Thread is instance of FrameProcessHandler");
                     processor = new FrameProcessHandler(1, d);
                     processHandlerThread = new Thread(processor);
                     processHandlerThread.start();
-                } else if (d.interruptedThread instanceof USBCameraInputStream) {
-                    stream = new USBCameraInputStream(d, 30);
+                } else if (d.interruptedThread.getClass().getName().contains("USBCameraInputStream")) {
+                    System.out.println("Thread is instance of USBCameraInputStream");
+                    if(d.usingLocalCamera) stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
+                    else stream = new USBCameraInputStream(d, 30);
                     camThread = new Thread(stream);
                     camThread.start();
                 }
@@ -215,10 +219,40 @@ public class DriverStream extends JFrame implements ITableListener {
         return in;
     }
 
+    private static void initNetworkTables(DriverStream d) {
+        NetworkTable.setClientMode();
+        NetworkTable.setIPAddress("10.8.65.52");
+        visionTbl = NetworkTable.getTable("vision");
+        modeTbl = NetworkTable.getTable("status");
+        visionTbl.addTableListener(d);
+        modeTbl.addTableListener(d);
+    }
+
+    public static void attemptConnect(DriverStream d) {
+        try {
+            robotAddress = InetAddress.getByName("10.8.65.52");
+            if(robotAddress.isReachable(5000)) {
+                stream = new USBCameraInputStream(d, 30);
+                initNetworkTables(d);
+            } else {
+                d.usingLocalCamera = true;
+                stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
+            }
+        } catch (UnknownHostException e) {
+            stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
+            d.consoleBuffer += "Error looking for " + robotAddress.toString() + ". Error type: " + e.getMessage() + ". Using local cameras.";
+            d.usingLocalCamera = true;
+        } catch (IOException e) {
+            stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
+            d.consoleBuffer += "Error looking for " + robotAddress.toString() + ". Error type: " + e.getMessage() + ". Using local cameras.";
+            d.usingLocalCamera = true;
+        }
+    }
+
     @Override
     public void valueChanged(ITable iTable, String s, Object o, boolean b) {
         if(s.equals("messages") && o instanceof String) roboConsoleBuffer += o + "\n";
         else if(s.equals("warnings") && o instanceof String) roboConsoleBuffer += "[WARNING]" + o + "\n";
-        else if(s.equals("mode") && o instanceof Integer) { modeChanged = true; mode = (int) o; }
+        else if(s.equals("mode") && o instanceof Double) { modeChanged = true; mode = (int) o; }
     }
 }
