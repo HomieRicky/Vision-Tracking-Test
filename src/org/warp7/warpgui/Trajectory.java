@@ -1,3 +1,5 @@
+package org.warp7.warpgui;
+
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;

@@ -1,3 +1,5 @@
+package org.warp7.warpgui;
+
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
@@ -13,6 +15,11 @@ import java.util.concurrent.Future;
  * Created by Ricardo on 2016-02-22.
  */
 public class FrameProcessHandler implements Runnable {
+    @Override
+    public void run() {
+
+    }
+    /*
     private ArrayList<FrameProcessor> processes;
     private ArrayList<Future<List<MatOfPoint>>> matOfPointCollector;
     private ArrayList<Mat> matStorage;
@@ -24,9 +31,9 @@ public class FrameProcessHandler implements Runnable {
     private int threadsInUse = 0;
     private int threadLimit = 0;
     private boolean shutdown = false;
-    private DriverStream driverStream;
+    private WarpGUI driverStream;
 
-    public FrameProcessHandler(int processLimit, DriverStream d) {
+    public FrameProcessHandler(int processLimit, WarpGUI d) {
         driverStream = d;
         threadLimit = processLimit;
         processes = new ArrayList<>(threadLimit);
@@ -51,7 +58,7 @@ public class FrameProcessHandler implements Runnable {
     public boolean addFrame(BufferedImage img) {
         if(threadsInUse == threadLimit) return false;
         //System.out.println("added frame");
-        Mat m = DriverStream.bufferedImageToMat(img);
+        Mat m = WarpGUI.bufferedImageToMat(img);
         int id = assignProcess(m);
         matStorage.set(id, m);
         processes.set(id, new FrameProcessor(m));
@@ -163,5 +170,5 @@ public class FrameProcessHandler implements Runnable {
         }
         return -1;
     }
-
+*/
 }

@@ -1,3 +1,5 @@
+package org.warp7.warpgui;
+
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
 
@@ -27,20 +29,17 @@ public class USBCameraInputStream implements Runnable {
     private byte[] dataBuffer = new byte[64 * 1024];
     private byte[] magicNumbersBuffer = new byte[4];
     private int fps;
-    private DriverStream dashboard;
 
     private boolean useLocal = false;
     private VideoCapture localCapturer;
 
     private boolean shutdown = false;
 
-    public USBCameraInputStream(DriverStream dash, int fps) {
+    public USBCameraInputStream(int fps) {
         this.fps = fps;
-        dashboard = dash;
     }
 
-    public USBCameraInputStream(DriverStream dash, boolean useLocal, int port) {
-        dashboard = dash;
+    public USBCameraInputStream(boolean useLocal, int port) {
         this.useLocal = true;
         localCapturer = new VideoCapture(port);
     }
@@ -54,7 +53,7 @@ public class USBCameraInputStream implements Runnable {
             public void uncaughtException(Thread t, Throwable e) {
                 sendMsg("Uncaught exception in USB camera stream: " + e.getMessage());
                 shutdownThread();
-                dashboard.interruptedThread = this;
+                InterruptionHandler.add(this);
             }
         });
         while(!shutdown) {
@@ -62,7 +61,7 @@ public class USBCameraInputStream implements Runnable {
                 if(useLocal) {
                     Mat m = new Mat();
                     localCapturer.read(m);
-                    sendFrame(DriverStream.matToBufferedImage(m), m.rows() * m.cols() * m.channels());
+                    sendFrame(WarpGUI.matToBufferedImage(m), m.rows() * m.cols() * m.channels());
                 } else {
                     try (
                             Socket socket = new Socket(ADRESS, PORT);
@@ -103,16 +102,14 @@ public class USBCameraInputStream implements Runnable {
 
     public void sendFrame(BufferedImage img, int byteAmt) {
         try {
-            dashboard.frameBuffer = img;
-            dashboard.frameUpdated = true;
-            dashboard.timestamp = System.currentTimeMillis();
+            WarpGUI.frameBuffer = img;
+            WarpGUI.frameUpdated = true;
+            WarpGUI.timestamp = System.currentTimeMillis();
             } catch(NullPointerException e) { sendMsg("Null BufferedImage!"); }
     }
 
     public void sendMsg(String msg) {
-
-        dashboard.consoleBuffer += (msg + "\n");
-        //System.out.println(msg);
+        WarpGUI.mainPanel.GUIconsole.addText(msg);
     }
 
     /**
@@ -139,7 +136,7 @@ public class USBCameraInputStream implements Runnable {
                 VideoCapture tester = new VideoCapture(i);
                 Mat m = new Mat();
                 tester.read(m);
-                BufferedImage testImg = DriverStream.matToBufferedImage(m);
+                BufferedImage testImg = WarpGUI.matToBufferedImage(m);
                 b = true;
             } catch (Exception e) {
                 b = false;

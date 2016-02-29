@@ -1,3 +1,5 @@
+package org.warp7.warpgui;
+
 import java.util.ArrayList;
 
 /**
@@ -8,14 +10,14 @@ public class InterruptionHandler {
 
     private static ArrayList<Object> exceptions = new ArrayList<>();
 
-    private static void add(Object o) { exceptions.add(o); }
+    public static void add(Object o) { exceptions.add(o); }
 
-    private static boolean check() {
+    public static boolean check() {
         if(!exceptions.isEmpty()) return true;
         return false;
     }
 
-    private static Object getObject() {
+    public static Object getObject() {
         return exceptions.get(0);
     }
 }

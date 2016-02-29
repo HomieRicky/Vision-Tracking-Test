@@ -1,8 +1,12 @@
+package org.warp7.warpgui;
+
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoWriter;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -10,21 +14,31 @@ import java.util.concurrent.Callable;
 public class FrameProcessor implements Callable<List<MatOfPoint>> {
     String path;
     Mat m;
-    boolean saveFilterProcess;
+    boolean testing;
+
+    public static Mat A = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(255));
+    public static Mat B = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(230));
+    public static Mat C = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(205));
+    public static Mat D = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(180));
 
     public FrameProcessor(Mat src) {
         m = src;
-        saveFilterProcess = false;
+        testing = false;
     }
 
-    public FrameProcessor(String filepath) {
-        path = filepath;
-        m = Imgcodecs.imread(path);
-        saveFilterProcess = true;
+    public FrameProcessor(Mat src, boolean b) {
+        m = src;
+        testing = true;
     }
 
     @Override
     public List<MatOfPoint> call() {
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                WarpGUI.mainPanel.GUIconsole.addText(e.getLocalizedMessage());
+            }
+        });
         Mat contours = new Mat(m.rows(), m.cols(), m.type());
         Mat hsv = new Mat(m.rows(), m.cols(), m.type());
         Mat blue = new Mat(m.rows(), m.cols(), CvType.CV_8UC3);
@@ -97,10 +111,14 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
         //Imgproc.fillPoly(n, simpleHullPointMats, Scalar.all(255));
         //m = n;
         //test t = new test(n, simpleHullPointMats.get(1));
-        /*
-        if(saveFilterProcess) {
-            Mat fourPoint = new Mat(blue.rows(), blue.cols(), blue.type());
-            Imgproc.fillPoly(fourPoint, simpleHullPointMats, Scalar.all(255));
+
+        if(testing) {
+            D = new Mat(blue.rows(), blue.cols(), blue.type());
+            A = hsv;
+            B = blue;
+            C = contours;
+            Imgproc.fillPoly(D, simpleHullPointMats, Scalar.all(255));
+            /*
             String fourPointOutPath = path.substring(0, path.lastIndexOf("."));
             fourPointOutPath += "D.jpg";
             String cannyOutPath = path.substring(0, path.lastIndexOf("."));
@@ -109,13 +127,15 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
             hsvPath += "A.jpg";
             String bluePath = path.substring(0, path.lastIndexOf("."));
             bluePath += "B.jpg";
+
+            /*
             Imgcodecs.imwrite(cannyOutPath, contours);
             Imgcodecs.imwrite(hsvPath, hsv);
             Imgcodecs.imwrite(bluePath, blue);
             Imgcodecs.imwrite(fourPointOutPath, fourPoint);
 
             //VIDEO OUTPUT
-            /*
+
         VideoWriter vw = new VideoWriter(path.substring(0, path.lastIndexOf(".")) + ".avi", -1, 1, new Size(blue.width(), blue.height()));
         Imgproc.putText(m, "ORIGINAL", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(150), 5);
         vw.write(m);
@@ -128,10 +148,10 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
         Imgproc.putText(fourPoint, "SIMPLIFIED FOUR-EDGE SHAPES", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
         vw.write(fourPoint);
         vw.release();
-
+*/
 
             //System.out.println("Processed for file: " + path);
-        }*/
+        }
         return simpleHullPointMats;
     }
 

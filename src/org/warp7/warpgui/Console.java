@@ -1,3 +1,5 @@
+package org.warp7.warpgui;
+
 import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;

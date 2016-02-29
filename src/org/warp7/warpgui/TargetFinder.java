@@ -1,3 +1,5 @@
+package org.warp7.warpgui;
+
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
