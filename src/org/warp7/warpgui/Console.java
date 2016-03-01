@@ -21,19 +21,24 @@ public class Console extends JScrollPane {
     private static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
     public Console(int width, int height) {
+        super();
         text = new JTextArea();
         text.setLineWrap(true);
         text.setEditable(false);
-        setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         setPreferredSize(new Dimension(width, height));
         add(text);
         allConsoles.add(this);
+        text.setVisible(true);
+        setVisible(true);
     }
 
     public void addText(String s) {
         buffer += "\n[" + sdf.format(cal.getTime()) + "] " + s;
+        System.out.println(buffer);
         text.setText(buffer);
         getVerticalScrollBar().setValue(getVerticalScrollBar().getMaximum());
+        //repaint();
     }
 
     public void clearText() {
@@ -49,4 +54,6 @@ public class Console extends JScrollPane {
     public static void writeToAllConsoles(String s) {
         for(Console console : allConsoles) console.addText(s);
     }
+
+    //public static void updateAll() { for(Console console : allConsoles) console.revalidate(); }
 }

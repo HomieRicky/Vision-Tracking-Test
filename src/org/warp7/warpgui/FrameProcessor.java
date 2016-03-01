@@ -1,15 +1,16 @@
 package org.warp7.warpgui;
 
 import org.opencv.core.*;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.videoio.VideoWriter;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+
+/**
+*   This is the code that processes an image and looks for targets.
+ *  Built for FRC Team 865 Warp 7 2016 Driver Station GUI
+*   Created January, 2016
+*/
 
 public class FrameProcessor implements Callable<List<MatOfPoint>> {
     String path;
@@ -42,18 +43,19 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
         Mat contours = new Mat(m.rows(), m.cols(), m.type());
         Mat hsv = new Mat(m.rows(), m.cols(), m.type());
         Mat blue = new Mat(m.rows(), m.cols(), CvType.CV_8UC3);
-        Imgproc.applyColorMap(m, hsv, Imgproc.COLORMAP_HSV);
+        Imgproc.applyColorMap(m, hsv, Imgproc.COLORMAP_PARULA);
         byte array[] = new byte[m.rows() * m.cols() * m.channels()];
         byte blueA[] = new byte[m.rows() * m.cols() * blue.channels()];
         hsv.get(0, 0, array);
         for(int i = 0; i < array.length/3; i++) {
-            blueA[i*3] = array[i*3];
+            //double multiplyer = 1-(array[(i*3)+1])
+            blueA[i*3] = (byte) (array[(i*3)+2]);
             blueA[(i*3)+1] = 0;
             blueA[(i*3)+2] = 0;
         }
         blue.put(0, 0, blueA);
         List<MatOfPoint> points = new ArrayList<MatOfPoint>();
-        Imgproc.threshold(blue, contours, 100, 500, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C);
+        Imgproc.threshold(blue, contours, 150, 750, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C);
         contours.get(0, 0, blueA);
         for(int i = 0; i < blueA.length; i++) {
             blueA[i] = (byte) (255-blueA[i]);
@@ -62,8 +64,8 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
             if(blueA[i*3] > 150) blueA[i*3] = 0;
         }
         contours.put(0, 0, blueA);
-        Imgproc.cvtColor(contours, contours, Imgproc.COLOR_RGB2GRAY);
-        Imgproc.findContours(contours, points, contours, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.cvtColor(contours, contours, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.findContours(contours, points, contours, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
         contours = new Mat(blue.rows(), blue.cols(), blue.type());
         //System.out.println(points.size());
         List<MatOfInt> hulls = new ArrayList<MatOfInt>();
@@ -102,15 +104,11 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
                     if(angle > 180) angle-=180;
                     angleSum += angle;
                 }
-                if(simpleHull.rows() == 4 && angleSum < 360) simpleHullPointMats.add(simpleHull);
+                if(simpleHull.rows() == 4 && angleSum < 400 && angleSum > 320) simpleHullPointMats.add(simpleHull);
                 Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 0.5, new Scalar(255, 128, 128), 1);
                 //System.out.println("Shape interior angle sum: " + angleSum);
             }
         }
-        //Mat n = new Mat(blue.rows(), blue.cols(), blue.type());
-        //Imgproc.fillPoly(n, simpleHullPointMats, Scalar.all(255));
-        //m = n;
-        //test t = new test(n, simpleHullPointMats.get(1));
 
         if(testing) {
             D = new Mat(blue.rows(), blue.cols(), blue.type());
@@ -118,39 +116,6 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
             B = blue;
             C = contours;
             Imgproc.fillPoly(D, simpleHullPointMats, Scalar.all(255));
-            /*
-            String fourPointOutPath = path.substring(0, path.lastIndexOf("."));
-            fourPointOutPath += "D.jpg";
-            String cannyOutPath = path.substring(0, path.lastIndexOf("."));
-            cannyOutPath += "C.jpg";
-            String hsvPath = path.substring(0, path.lastIndexOf("."));
-            hsvPath += "A.jpg";
-            String bluePath = path.substring(0, path.lastIndexOf("."));
-            bluePath += "B.jpg";
-
-            /*
-            Imgcodecs.imwrite(cannyOutPath, contours);
-            Imgcodecs.imwrite(hsvPath, hsv);
-            Imgcodecs.imwrite(bluePath, blue);
-            Imgcodecs.imwrite(fourPointOutPath, fourPoint);
-
-            //VIDEO OUTPUT
-
-        VideoWriter vw = new VideoWriter(path.substring(0, path.lastIndexOf(".")) + ".avi", -1, 1, new Size(blue.width(), blue.height()));
-        Imgproc.putText(m, "ORIGINAL", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(150), 5);
-        vw.write(m);
-        Imgproc.putText(hsv, "HSV MAP", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(0), 5);
-        vw.write(hsv);
-        Imgproc.putText(blue, "FILTERED BLUE", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
-        vw.write(blue);
-        Imgproc.putText(contours, "CONTOURS", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
-        vw.write(contours);
-        Imgproc.putText(fourPoint, "SIMPLIFIED FOUR-EDGE SHAPES", new Point(100, 300), Core.FONT_HERSHEY_SIMPLEX, 3, Scalar.all(255), 5);
-        vw.write(fourPoint);
-        vw.release();
-*/
-
-            //System.out.println("Processed for file: " + path);
         }
         return simpleHullPointMats;
     }

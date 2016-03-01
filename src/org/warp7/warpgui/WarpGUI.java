@@ -30,7 +30,7 @@ public class WarpGUI extends JFrame {
     //STATICS
     //GUI
     private static WarpGUI main;
-    private static final String VERSION = "prerelease-20160229b";
+    private static final String VERSION = "prerelease-20160301a";
     public static NetworkTable robotTables, robot, processingOutputs;
     public static JTabbedPane tabs;
     public static JPanel autoPanel, testPanel, optionsPanel;
@@ -41,7 +41,7 @@ public class WarpGUI extends JFrame {
     public static final File CONFIG_DEFAULT_PATH = new File("values.txt");
     public static final File SETTINGS_DEFAUlT_PATH = new File("settings.txt");
     public static String LOG_DEFAULT_PATH;
-    private static String DEFAULT_IP = "10.8.65.2";
+    private static String DEFAULT_IP = "10.8.65.52";
     private static int DEFAULT_PORT = 1180;
 
     //STORAGE
@@ -49,6 +49,11 @@ public class WarpGUI extends JFrame {
     public static volatile boolean frameUpdated = false;
     public static volatile long timestamp = System.currentTimeMillis();
     static USBCameraInputStream stream;
+    //SENDING TO ROBOT
+    static double azimuth = 0;
+    static double dist = 0;
+    static boolean dataSendable = false;
+    static String info = "";
 
 
 
@@ -75,7 +80,7 @@ public class WarpGUI extends JFrame {
         main = new WarpGUI();
         mainPanel.GUIconsole.addText("Connecting to local camera");
         System.out.println("connecting");
-        stream = new USBCameraInputStream(true, 1);
+        stream = new USBCameraInputStream(true, 0);
         Thread streamThread = new Thread(stream);
         streamThread.start();
         System.out.println("connected");
@@ -101,8 +106,27 @@ public class WarpGUI extends JFrame {
                         } else {
                             try {
                                 if (futureTask.isDone()) {
+                                    List<MatOfPoint> retr = new ArrayList<>();
+                                    retr = futureTask.get();
                                     Mat m = processor.m;
-                                    Imgproc.fillPoly(m, futureTask.get(), Scalar.all(255));
+                                    Mat overlay = new Mat(m.rows(), m.cols(), CvType.CV_8UC4, Scalar.all(0));
+                                    if(!retr.isEmpty()) {
+                                        Imgproc.polylines(overlay, retr, true, new Scalar(255, 0, 0, 255), 4);
+                                        Imgproc.fillPoly(overlay, retr, new Scalar(255, 255, 255, 64));
+                                        Trajectory t = new Trajectory(retr);
+                                        double[] trajectoryVals = t.getTrajectory();
+                                        if (trajectoryVals.length == 2) {
+                                            for (MatOfPoint target : retr)
+                                                Imgproc.circle(overlay, t.getTargetPoint(target), 5, new Scalar(0, 255, 0, 255), 2);
+                                            Imgproc.circle(overlay, t.idealPoint, 5, new Scalar(0, 0, 255, 255), 2);
+                                            azimuth = trajectoryVals[0];
+                                            dist = trajectoryVals[1];
+                                            dataSendable = true;
+                                        } else if (trajectoryVals == new double[]{-2}) {
+                                            info = "Targets spotted. None shootable.";
+                                        }
+                                    }
+                                    m = FrameProcessor.overtrayImage(m, overlay);
                                     mainPanel.processWindow.setIcon(new ImageIcon(matToBufferedImage(m)));
                                 }
                             } catch(NullPointerException e) {
@@ -149,6 +173,8 @@ public class WarpGUI extends JFrame {
 
                     break;
             }
+            //Any generic loop stuff here
+            //Console.updateAll();
         }
 
     }
