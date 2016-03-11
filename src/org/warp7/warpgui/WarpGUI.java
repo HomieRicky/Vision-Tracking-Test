@@ -32,28 +32,38 @@ public class WarpGUI extends JFrame {
     private static WarpGUI main;
     private static final String VERSION = "prerelease-20160301a";
     public static NetworkTable robotTables, robot, processingOutputs;
+    public static NetworkTableListener robotStandardListener;
     public static JTabbedPane tabs;
-    public static JPanel autoPanel, testPanel, optionsPanel;
+    public static JPanel autoPanel, optionsPanel;
     public static MainPanel mainPanel;
     public static VisionTestPanel visionTestPanel;
+    public static TestPanel testPanel;
 
     //DEFAULTS
     public static final File CONFIG_DEFAULT_PATH = new File("values.txt");
     public static final File SETTINGS_DEFAUlT_PATH = new File("settings.txt");
     public static String LOG_DEFAULT_PATH;
-    private static String DEFAULT_IP = "10.8.65.52";
-    private static int DEFAULT_PORT = 1180;
+    public static String DEFAULT_IP = "roborio-865-frc.local";
+    public static int DEFAULT_PORT = 1180;
+    public static int LOCAL_CAM_PORT = 0;
 
     //STORAGE
     public static volatile BufferedImage frameBuffer = null;
     public static volatile boolean frameUpdated = false;
     public static volatile long timestamp = System.currentTimeMillis();
+    public static long lastTimestamp = 0;
+    public static int frameCounter = 0;
+    public static float fps = 0;
+    public static long processStartTime = 0;
+    public static long processLatency = 0;
     static USBCameraInputStream stream;
     //SENDING TO ROBOT
     static double azimuth = 0;
     static double dist = 0;
     static boolean dataSendable = false;
     static String info = "";
+    static boolean thruNetwork = false;
+    static boolean ntEnabled = false;
 
 
 
@@ -63,28 +73,33 @@ public class WarpGUI extends JFrame {
         final File ldp = new File(WarpGUI.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         LOG_DEFAULT_PATH = ldp.getAbsolutePath().substring(0, ldp.getAbsolutePath().lastIndexOf("\\"));
+
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                e.printStackTrace();
-                try {
+                //e.printStackTrace();
+                WarpGUI.mainPanel.GUIconsole.addText(e.getLocalizedMessage());
+                /*try {
                     restartApplication();
                 } catch (URISyntaxException e1) {
                     System.exit(1);
                 } catch (IOException e1) {
                     System.exit(1);
-                }
+                }*/
             }
         });
 
         main = new WarpGUI();
-        mainPanel.GUIconsole.addText("Connecting to local camera");
-        System.out.println("connecting");
+        //attemptConnect();
         stream = new USBCameraInputStream(true, 0);
+        //initNetworkTables();
+        testPanel.updateTable("data/intake", "intake", 1.0);
+        testPanel.updateTable("data/drive", "leftMotor", 0.5);
+        testPanel.updateTable("data/drive", "rightMotor", 0.7);
+        testPanel.updateTable("data/intake", "intake", 0.9);
         Thread streamThread = new Thread(stream);
         streamThread.start();
-        System.out.println("connected");
-        mainPanel.GUIconsole.addText("Connected to local camera");
+        //mainPanel.GUIconsole.addText("Connected to local camera");
         FrameProcessor processor = null;
         ExecutorService es = Executors.newSingleThreadExecutor();
         Future<List<MatOfPoint>> futureTask = null;
@@ -99,18 +114,31 @@ public class WarpGUI extends JFrame {
                     if(frameUpdated) {
                         mainPanel.streamWindow.setIcon(new ImageIcon(frameBuffer));
                         frameUpdated = false;
+                        frameCounter++;
+                        if(frameCounter >= 5) {
+                            fps = (float) ((timestamp-lastTimestamp)/15);
+                            lastTimestamp = timestamp;
+                            frameCounter = 0;
+                        }
                         if(!doingTask) {
                             processor = new FrameProcessor(bufferedImageToMat(frameBuffer));
+                            es = Executors.newSingleThreadExecutor();
                             futureTask = es.submit(processor);
                             doingTask = true;
+                            processStartTime = System.currentTimeMillis();
                         } else {
                             try {
                                 if (futureTask.isDone()) {
                                     List<MatOfPoint> retr = new ArrayList<>();
-                                    retr = futureTask.get();
+                                    try {
+                                        retr = futureTask.get();
+                                    } catch(ArrayIndexOutOfBoundsException e) {
+                                        //System.out.println("no targets");
+                                    }
+                                    System.out.println(retr.size());
                                     Mat m = processor.m;
                                     Mat overlay = new Mat(m.rows(), m.cols(), CvType.CV_8UC4, Scalar.all(0));
-                                    if(!retr.isEmpty()) {
+                                    if(retr.size() != 0) {
                                         Imgproc.polylines(overlay, retr, true, new Scalar(255, 0, 0, 255), 4);
                                         Imgproc.fillPoly(overlay, retr, new Scalar(255, 255, 255, 64));
                                         Trajectory t = new Trajectory(retr);
@@ -122,21 +150,28 @@ public class WarpGUI extends JFrame {
                                             azimuth = trajectoryVals[0];
                                             dist = trajectoryVals[1];
                                             dataSendable = true;
+                                            info = "Target found!";
                                         } else if (trajectoryVals == new double[]{-2}) {
                                             info = "Targets spotted. None shootable.";
                                         }
+                                    } else {
+                                        info = "No targets.";
                                     }
                                     m = FrameProcessor.overtrayImage(m, overlay);
                                     mainPanel.processWindow.setIcon(new ImageIcon(matToBufferedImage(m)));
                                 }
                             } catch(NullPointerException e) {
+                                mainPanel.GUIconsole.addText(e.getLocalizedMessage() + " in main loop.");
                                 e.printStackTrace();
                             } catch (InterruptedException e) {
+                                mainPanel.GUIconsole.addText(e.getLocalizedMessage() + " in main loop.");
                                 e.printStackTrace();
                             } catch (ExecutionException e) {
+                                mainPanel.GUIconsole.addText(e.getLocalizedMessage() + " in main loop.");
                                 e.printStackTrace();
                             }
                             doingTask = false;
+                            processLatency = System.currentTimeMillis()-processStartTime;
                         }
                     }
                     break;
@@ -174,7 +209,10 @@ public class WarpGUI extends JFrame {
                     break;
             }
             //Any generic loop stuff here
-            //Console.updateAll();
+            mainPanel.streamStatus.setText("Status: " + info + " | FPS: " + fps + " | Dist: " + dist + " | Azimuth: " + azimuth + " | Latency: " + processLatency);
+            if(ntEnabled) {
+
+            }
         }
 
     }
@@ -197,7 +235,7 @@ public class WarpGUI extends JFrame {
 
 
         setTitle("WarpGUI ver. " + VERSION);
-        setPreferredSize(new Dimension(1920, 790));
+        setPreferredSize(new Dimension(1920, 840));
         pack();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
@@ -246,44 +284,38 @@ public class WarpGUI extends JFrame {
         return m;
     }
 
-    /*
-    private static void initNetworkTables(DriverStream d) {
+
+    private static void initNetworkTables() {
         NetworkTable.setClientMode();
-        NetworkTable.setIPAddress("10.8.65.52");
-        visionTbl = NetworkTable.getTable("vision");
-        modeTbl = NetworkTable.getTable("status");
-        visionTbl.addTableListener(d);
-        modeTbl.addTableListener(d);
+        NetworkTable.setIPAddress(DEFAULT_IP);
+        processingOutputs = NetworkTable.getTable("vision");
+        robotTables = NetworkTable.getTable("status");
+        robotStandardListener = new NetworkTableListener();
+        robotTables.addTableListener(robotStandardListener);
+        processingOutputs.addTableListener(robotStandardListener);
+        ntEnabled = true;
     }
 
-    public static void attemptConnect(DriverStream d) {
+    public static void attemptConnect() {
+        InetAddress robotAddress;
         try {
-            robotAddress = InetAddress.getByName("10.8.65.52");
+            robotAddress = InetAddress.getByName(DEFAULT_IP);
             if(robotAddress.isReachable(5000)) {
-                stream = new USBCameraInputStream(d, 30);
-                initNetworkTables(d);
+                stream = new USBCameraInputStream(30);
+                thruNetwork = true;
+                initNetworkTables();
             } else {
-                d.usingLocalCamera = true;
-                stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
+                thruNetwork = false;
+                stream = new USBCameraInputStream(true, LOCAL_CAM_PORT);
             }
         } catch (UnknownHostException e) {
-            stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
-            d.consoleBuffer += "Error looking for " + robotAddress.toString() + ". Error type: " + e.getMessage() + ". Using local cameras.";
-            d.usingLocalCamera = true;
+            stream = new USBCameraInputStream(true, LOCAL_CAM_PORT);
+            WarpGUI.mainPanel.GUIconsole.addText("Error looking for " + DEFAULT_IP + ". Using local camera.");
+            thruNetwork = false;
         } catch (IOException e) {
-            stream = new USBCameraInputStream(d, true, USBCameraInputStream.testLocalCameraPorts(1));
-            d.consoleBuffer += "Error looking for " + robotAddress.toString() + ". Error type: " + e.getMessage() + ". Using local cameras.";
-            d.usingLocalCamera = true;
+            stream = new USBCameraInputStream(true, LOCAL_CAM_PORT);
+            WarpGUI.mainPanel.GUIconsole.addText("Error looking for " + DEFAULT_IP + ". Using local camera.");
+            thruNetwork = false;
         }
     }
-
-    @Override
-    public void valueChanged(ITable iTable, String s, Object o, boolean b) {
-        if(s.equals("messages") && o instanceof String) roboConsoleBuffer += o + "\n";
-        else if(s.equals("warnings") && o instanceof String) roboConsoleBuffer += "[WARNING]" + o + "\n";
-        else if(s.equals("mode") && o instanceof Double) { modeChanged = true; mode = (int) o; }
-    }
-*/
-
-
 }

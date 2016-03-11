@@ -12,39 +12,38 @@ import java.util.Calendar;
  * Created 26 Feb, 2016
  */
 
-public class Console extends JScrollPane {
+public class Console extends JPanel {
 
     private static ArrayList<Console> allConsoles = new ArrayList<>();
     private JTextArea text;
+    private JScrollPane jsp;
     private String buffer = "";
     private static Calendar cal = Calendar.getInstance();
     private static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
     public Console(int width, int height) {
-        super();
+        super(new GridLayout(1, 1));
         text = new JTextArea();
+        jsp = new JScrollPane(text, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         text.setLineWrap(true);
         text.setEditable(false);
-        setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         setPreferredSize(new Dimension(width, height));
-        add(text);
+        add(jsp);
         allConsoles.add(this);
-        text.setVisible(true);
-        setVisible(true);
     }
 
     public void addText(String s) {
+        cal = Calendar.getInstance();
         buffer += "\n[" + sdf.format(cal.getTime()) + "] " + s;
-        System.out.println(buffer);
         text.setText(buffer);
-        getVerticalScrollBar().setValue(getVerticalScrollBar().getMaximum());
+        jsp.getVerticalScrollBar().setValue(jsp.getVerticalScrollBar().getMaximum());
         //repaint();
     }
 
     public void clearText() {
         buffer = "";
         text.setText(buffer);
-        getVerticalScrollBar().setValue(getVerticalScrollBar().getMaximum());
+        jsp.getVerticalScrollBar().setValue(jsp.getVerticalScrollBar().getMaximum());
     }
 
     public static void clearAllConsoles() {
@@ -54,6 +53,4 @@ public class Console extends JScrollPane {
     public static void writeToAllConsoles(String s) {
         for(Console console : allConsoles) console.addText(s);
     }
-
-    //public static void updateAll() { for(Console console : allConsoles) console.revalidate(); }
 }

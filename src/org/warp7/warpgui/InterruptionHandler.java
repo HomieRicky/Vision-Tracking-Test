@@ -18,6 +18,8 @@ public class InterruptionHandler {
     }
 
     public static Object getObject() {
-        return exceptions.get(0);
+        Object retr = exceptions.get(0);
+        exceptions.remove(0);
+        return retr;
     }
 }

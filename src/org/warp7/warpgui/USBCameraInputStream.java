@@ -1,7 +1,10 @@
 package org.warp7.warpgui;
 
 import org.opencv.core.Mat;
+import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
+import org.warp7.warpgui.tabs.VisionTestPanel;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -20,8 +23,8 @@ public class USBCameraInputStream implements Runnable {
 
 
     //Uses protocols from SmartDashboard and GRIP
-    private final static int PORT = 1180;
-    private final static String ADRESS = "10.8.65.52";
+    private final static int PORT = WarpGUI.DEFAULT_PORT;
+    private final static String ADRESS = WarpGUI.DEFAULT_IP;
     private final static byte[] MAGIC_NUMBERS = {0x01, 0x00, 0x00, 0x00};
     private final static int HW_COMPRESSION = -1;
     private final static int SIZE_640x480 = 0;
@@ -60,6 +63,9 @@ public class USBCameraInputStream implements Runnable {
             try {
                 if(useLocal) {
                     Mat m = new Mat();
+                    //sendMsg("Exp : " + localCapturer.get(Videoio.CAP_PROP_EXPOSURE));
+                    //localCapturer.set(Videoio.CAP_PROP_GAMMA, VisionTestPanel.sliderVal);
+                    //sendMsg("Exp : " + localCapturer.get(Videoio.CAP_PROP_GAMMA));
                     localCapturer.read(m);
                     sendFrame(WarpGUI.matToBufferedImage(m), m.rows() * m.cols() * m.channels());
                 } else {
@@ -129,6 +135,7 @@ public class USBCameraInputStream implements Runnable {
         return buffer;
     }
 
+    /*
     public static int testLocalCameraPorts(int limit) {
         for(int i = limit; i >= 0; i--) {
             boolean b = false;
@@ -148,5 +155,6 @@ public class USBCameraInputStream implements Runnable {
         }
         return -1;
     }
+    */
 
 }

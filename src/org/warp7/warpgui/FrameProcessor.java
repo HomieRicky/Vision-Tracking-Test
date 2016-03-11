@@ -2,6 +2,8 @@ package org.warp7.warpgui;
 
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
+import org.warp7.warpgui.tabs.VisionTestPanel;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -16,6 +18,9 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
     String path;
     Mat m;
     boolean testing;
+    //public static volatile int channelThreshold = 0;
+    //public static volatile int rThreshold = 0;
+
 
     public static Mat A = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(255));
     public static Mat B = new Mat(480, 640, CvType.CV_8UC3, Scalar.all(230));
@@ -37,23 +42,43 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                WarpGUI.mainPanel.GUIconsole.addText(e.getLocalizedMessage());
+                WarpGUI.mainPanel.GUIconsole.addText(e.getMessage());
             }
         });
         Mat contours = new Mat(m.rows(), m.cols(), m.type());
         Mat hsv = new Mat(m.rows(), m.cols(), m.type());
         Mat blue = new Mat(m.rows(), m.cols(), CvType.CV_8UC3);
-        Imgproc.applyColorMap(m, hsv, Imgproc.COLORMAP_PARULA);
+        //Imgproc.applyColorMap(m, hsv, Imgproc.COLORMAP_HSV);
+        Imgproc.cvtColor(m, hsv, Imgproc.COLOR_BGR2HSV);
+        ArrayList<Mat> hsvMats = new ArrayList<>();
+        Core.split(hsv, hsvMats);
+        byte blueA[] = new byte[m.rows() * m.cols() * blue.channels()];
+        byte[] hue = new byte[m.rows() * m.cols()], sat = new byte[m.rows() * m.cols()], vib = new byte[m.rows() * m.cols()];
+        hsvMats.get(0).get(0, 0, hue);
+        hsvMats.get(1).get(0, 0, sat);
+        hsvMats.get(2).get(0, 0, vib);
+        for(int i = 0; i < hue.length; i++) {
+            if(vib[i] > VisionTestPanel.sliderVal-20 && vib[i] < VisionTestPanel.sliderVal+20) blueA[(i*3)+1] = (byte) (hue[i]*2);
+            //blueA[i*3] = vib[i];
+        }
+        blue.put(0, 0, blueA);
+        /*
         byte array[] = new byte[m.rows() * m.cols() * m.channels()];
         byte blueA[] = new byte[m.rows() * m.cols() * blue.channels()];
         hsv.get(0, 0, array);
+        int bl, g , r;
         for(int i = 0; i < array.length/3; i++) {
-            //double multiplyer = 1-(array[(i*3)+1])
-            blueA[i*3] = (byte) (array[(i*3)+2]);
-            blueA[(i*3)+1] = 0;
-            blueA[(i*3)+2] = 0;
+            bl = i*3; g = (i*3)+1; r = (i*3)+2;
+            if(blueA[bl] > 0x6A && blueA[bl] < 140)
+                blueA[bl] = (byte) ((byte) blueA[bl]);
+
+            //blueA[(i*3)+1] = 0;
+            //blueA[(i*3)+2] = 0;
         }
         blue.put(0, 0, blueA);
+         */
+
+
         List<MatOfPoint> points = new ArrayList<MatOfPoint>();
         Imgproc.threshold(blue, contours, 150, 750, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C);
         contours.get(0, 0, blueA);
@@ -61,9 +86,10 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
             blueA[i] = (byte) (255-blueA[i]);
         }
         for(int i = 0; i < blueA.length/3; i++) {
-            if(blueA[i*3] > 150) blueA[i*3] = 0;
+            if(blueA[i*3] >= 230) blueA[i*3] = (byte) 255;
         }
         contours.put(0, 0, blueA);
+
         Imgproc.cvtColor(contours, contours, Imgproc.COLOR_BGR2GRAY);
         Imgproc.findContours(contours, points, contours, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
         contours = new Mat(blue.rows(), blue.cols(), blue.type());
@@ -104,8 +130,8 @@ public class FrameProcessor implements Callable<List<MatOfPoint>> {
                     if(angle > 180) angle-=180;
                     angleSum += angle;
                 }
-                if(simpleHull.rows() == 4 && angleSum < 400 && angleSum > 320) simpleHullPointMats.add(simpleHull);
-                Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 0.5, new Scalar(255, 128, 128), 1);
+                if(simpleHull.rows() == 4 && angleSum < 380 && angleSum > 270) simpleHullPointMats.add(simpleHull);
+                if(simpleHullA.length > 0) Imgproc.putText(contours, String.valueOf((float) angleSum), new Point(simpleHullA[0].x-100, simpleHullA[0].y+100), Core.FONT_ITALIC, 0.5, new Scalar(255, 128, 128), 1);
                 //System.out.println("Shape interior angle sum: " + angleSum);
             }
         }
