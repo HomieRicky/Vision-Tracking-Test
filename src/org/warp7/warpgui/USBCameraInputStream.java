@@ -38,10 +38,12 @@ public class USBCameraInputStream implements Runnable {
 
     private boolean shutdown = false;
 
+    //This will initialize the camera on a network. Just put FPS as 30
     public USBCameraInputStream(int fps) {
         this.fps = fps;
     }
 
+    //This will initialize a local camera on the computer for testing purposes. The port is usually 0 for the laptop camera. Try 0 or 1.
     public USBCameraInputStream(boolean useLocal, int port) {
         this.useLocal = true;
         localCapturer = new VideoCapture(port);

@@ -13,15 +13,19 @@ SHOOTER_HEIGHT = 5
 TARGET_HEIGHT = 99
 
 #Width of the reflective strip
+#Do not change
 TARGET_STRIP_X = 20
 
 #Height of the reflective strip
+#Do not change
 TARGET_STRIP_Y = 12
 
 #Diameter of the ball
+#Do not change
 BALL_DIAMETER=10
 
 #Field of view of the camera
+#Needs changing
 CAMERA_HORIZONTAL_FOV = 47
 CAMERA_VERTICAL_FOV = 36.2
 

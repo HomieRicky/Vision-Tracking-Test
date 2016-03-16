@@ -30,7 +30,7 @@ public class WarpGUI extends JFrame {
     //STATICS
     //GUI
     private static WarpGUI main;
-    private static final String VERSION = "prerelease-20160301a";
+    private static final String VERSION = "prerelease-20160316a";
     public static NetworkTable robotTables, robot, processingOutputs;
     public static NetworkTableListener robotStandardListener;
     public static JTabbedPane tabs;
@@ -90,8 +90,17 @@ public class WarpGUI extends JFrame {
         });
 
         main = new WarpGUI();
-        //attemptConnect();
-        stream = new USBCameraInputStream(true, 0);
+        /*
+        INSTRUCTIONS:
+        TRY USING attemptConnect()
+        IF IT DOESNT WORK, USE THE SECOND STREAM INITIALIZER BELOW AND USE initNetworkTables()
+        THE FIRST STREAM INITIALIZER IS FOR A LOCAL CAMERA ON THE LAPTOP
+        DO NOT INITIALIZE NETWORKTABLES IF YOU'RE NOT CONNECTED TO THE ROBOT
+        -Ricardo
+         */
+        attemptConnect();
+        //stream = new USBCameraInputStream(true, 0);
+        //stream = new USBCameraInputStream(30);
         //initNetworkTables();
         testPanel.updateTable("data/intake", "intake", 1.0);
         testPanel.updateTable("data/drive", "leftMotor", 0.5);
@@ -99,7 +108,7 @@ public class WarpGUI extends JFrame {
         testPanel.updateTable("data/intake", "intake", 0.9);
         Thread streamThread = new Thread(stream);
         streamThread.start();
-        //mainPanel.GUIconsole.addText("Connected to local camera");
+        mainPanel.GUIconsole.addText("Connected to camera");
         FrameProcessor processor = null;
         ExecutorService es = Executors.newSingleThreadExecutor();
         Future<List<MatOfPoint>> futureTask = null;
@@ -210,8 +219,10 @@ public class WarpGUI extends JFrame {
             }
             //Any generic loop stuff here
             mainPanel.streamStatus.setText("Status: " + info + " | FPS: " + fps + " | Dist: " + dist + " | Azimuth: " + azimuth + " | Latency: " + processLatency);
-            if(ntEnabled) {
-
+            if(ntEnabled && dataSendable) {
+                processingOutputs.putNumber("distance", dist);
+                processingOutputs.putNumber("azimuth", azimuth);
+                dataSendable = false;
             }
         }
 
