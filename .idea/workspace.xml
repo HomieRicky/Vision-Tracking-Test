@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="ce0946b6-7091-4843-a0bf-6b4df8392fef" name="Default" comment="">
+    <list default="true" id="ce0946b6-7091-4843-a0bf-6b4df8392fef" name="Default" comment="Added instructions and networktables auton output&#10;See">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/TargetFinder.iml" afterPath="$PROJECT_DIR$/TargetFinder.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/warp7/warpgui/USBCameraInputStream.java" afterPath="$PROJECT_DIR$/src/org/warp7/warpgui/USBCameraInputStream.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/warp7/warpgui/WarpGUI.java" afterPath="$PROJECT_DIR$/src/org/warp7/warpgui/WarpGUI.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/values.txt" afterPath="$PROJECT_DIR$/values.txt" />
     </list>
     <list id="a2dc0dc5-ee5c-4368-aa52-3e2b7b5c0051" name="Rejected commit: Default" comment="75% complete!" />
     <ignored path="TargetFinder.iws" />
@@ -43,7 +39,7 @@
         <entry file="file://$PROJECT_DIR$/src/org/warp7/warpgui/WarpGUI.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.7711039">
-              <caret line="94" column="22" selection-start-line="94" selection-start-column="22" selection-end-line="94" selection-end-column="22" />
+              <caret line="94" column="1" selection-start-line="94" selection-start-column="1" selection-end-line="94" selection-end-column="1" />
               <folding>
                 <element signature="e#11865#11873#0" expanded="true" />
               </folding>
@@ -580,7 +576,13 @@
       <option name="project" value="LOCAL" />
       <updated>1456822505178</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Vision should be working better now. Cleaned up lots of code too! TODO: Networktables and fixing the consoles not displaying text.">
+      <created>1458146258134</created>
+      <option name="number" value="00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1458146258134</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -944,7 +946,7 @@
     <entry file="file://$PROJECT_DIR$/src/org/warp7/warpgui/WarpGUI.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.7711039">
-          <caret line="94" column="22" selection-start-line="94" selection-start-column="22" selection-end-line="94" selection-end-column="22" />
+          <caret line="94" column="1" selection-start-line="94" selection-start-column="1" selection-end-line="94" selection-end-column="1" />
           <folding>
             <element signature="e#11865#11873#0" expanded="true" />
           </folding>
